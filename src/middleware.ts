@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   console.log('🔍 Middleware - hostname:', hostname, 'pathname:', pathname)
 
   // Определяем, это админский поддомен или нет
-  const isAdminSubdomain = hostname.includes('admin.mastus.local')
+  const isAdminSubdomain = hostname.startsWith('admin.')
   
   console.log('🌐 IsAdminSubdomain:', isAdminSubdomain)
 

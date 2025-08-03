@@ -3,23 +3,20 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   
-  // Разрешенные домены для разработки (исправляет CORS предупреждения)
-  allowedDevOrigins: [
-    'admin.mastus.local:3000',
-    'mastus.local:3000'
-  ],
+  // Для создания standalone версии (нужно для Docker)
+  output: 'standalone',
   
   // Поддержка поддоменов - правильная конфигурация  
   async rewrites() {
     return [
-      // Только для логина на админском поддомене
+      // Для логина на админском поддомене (работает для любого домена)
       {
         source: '/login',
         destination: '/admin/login',
         has: [
           {
             type: 'host',
-            value: 'admin.mastus.local:3000',
+            value: '(admin\\..+)',
           },
         ],
       },

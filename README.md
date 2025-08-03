@@ -1,36 +1,203 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mastus Site
 
-## Getting Started
+Современный веб-сайт с административной панелью на Next.js, построенный с поддержкой субдоменов и полной готовностью к продакшену.
 
-First, run the development server:
+## Особенности
+
+- 🌐 **Поддержка субдоменов**: главный сайт и админка на разных поддоменах
+- 🔐 **Безопасная авторизация**: NextAuth.js с ролевой системой  
+- 📊 **База данных**: PostgreSQL с Prisma ORM
+- ⚡ **Кэширование**: Redis для rate limiting и кэширования
+- 🐳 **Docker Ready**: полная поддержка Docker/Podman
+- 🔒 **Безопасность**: rate limiting, CSP заголовки, защита от XSS
+- 📱 **Responsive**: адаптивный дизайн с Tailwind CSS
+
+## Быстрый старт
+
+### Локальная разработка
+
+1. **Клонируйте репозиторий:**
+   ```bash
+   git clone <repository-url>
+   cd mastus-site
+   ```
+
+2. **Установите зависимости:**
+   ```bash
+   npm install
+   ```
+
+3. **Настройте окружение:**
+   ```bash
+   cp .env.example .env
+   # Отредактируйте .env файл
+   ```
+
+4. **Запустите базы данных:**
+   ```bash
+   docker-compose up -d postgres redis
+   ```
+
+5. **Выполните миграции:**
+   ```bash
+   npm run db:migrate
+   npm run db:seed
+   ```
+
+6. **Запустите разработку:**
+
+6. **Запустите разработку:**
+   ```bash
+   npm run dev
+   ```
+
+### Продакшен деплой
+
+🚀 **Быстрый деплой** - см. [QUICK_DEPLOY.md](QUICK_DEPLOY.md)
+
+📖 **Полная инструкция** - см. [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
+
+#### За 5 минут:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Настройте окружение
+cp .env.example .env && nano .env
+
+# 2. Настройте домен  
+sed -i 's/YOUR_DOMAIN/yourdomain.com/g' nginx.conf
+
+# 3. Проверьте готовность
+bash scripts/check-deploy-ready.sh
+
+# 4. Запустите
+make build && make up && make db-migrate && make create-admin
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Структура проекта
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+mastus-site/
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── (main)/         # Главный сайт
+│   │   ├── admin/          # Админская панель
+│   │   └── api/            # API маршруты
+│   ├── components/         # React компоненты
+│   ├── lib/               # Утилиты и конфигурация
+│   └── middleware.ts      # Next.js middleware
+├── prisma/               # База данных
+├── scripts/             # Вспомогательные скрипты
+├── docker-compose.prod.yml  # Продакшен конфигурация
+├── Dockerfile           # Docker образ
+└── nginx.conf          # Nginx конфигурация
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Доступные команды
 
-## Learn More
+### Make команды (рекомендуется)
+```bash
+make help         # Список всех команд
+make build        # Собрать образ
+make up          # Запустить сервисы  
+make down        # Остановить сервисы
+make logs        # Просмотр логов
+make create-admin # Создать администратора
+make backup      # Бэкап базы данных
+```
 
-To learn more about Next.js, take a look at the following resources:
+### NPM скрипты
+```bash
+npm run dev              # Разработка
+npm run build           # Сборка
+npm run start           # Продакшен сервер
+npm run db:migrate      # Миграции (dev)
+npm run db:migrate:deploy # Миграции (prod)
+npm run admin:create    # Создать админа
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Конфигурация
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Переменные окружения
 
-## Deploy on Vercel
+```env
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/db"
+POSTGRES_PASSWORD="secure_password"
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Redis  
+REDIS_URL="redis://localhost:6379"
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# NextAuth
+NEXTAUTH_URL="https://yourdomain.com"
+NEXTAUTH_SECRET="your_secret_key"
+```
+
+### Поддержка субдоменов
+
+- **Главный сайт**: `yourdomain.com`
+- **Админка**: `admin.yourdomain.com`
+
+Настройте DNS A-записи для обоих (суб)доменов.
+
+## Безопасность
+
+- ✅ Rate limiting для API
+- ✅ CSP заголовки безопасности  
+- ✅ Защита от XSS и CSRF
+- ✅ Безопасные сессии
+- ✅ Хэширование паролей (bcrypt)
+- ✅ Валидация данных (Zod)
+
+## Мониторинг
+
+```bash
+# Проверка здоровья сервисов
+make check-health
+
+# Просмотр логов
+make logs
+
+# Статус контейнеров
+docker-compose -f docker-compose.prod.yml ps
+```
+
+## Бэкапы
+
+```bash
+# Создать бэкап
+make backup
+
+# Восстановить из бэкапа  
+docker-compose -f docker-compose.prod.yml exec -T postgres \
+  psql -U mastus_user mastus_db < backup.sql
+```
+
+## Разработка
+
+### Добавление новых функций
+
+1. Создайте новые компоненты в `src/components/`
+2. Добавьте страницы в `src/app/` 
+3. Настройте API маршруты в `src/app/api/`
+4. Обновите базу данных через Prisma миграции
+
+### Стек технологий
+
+- **Frontend**: Next.js 15, React 19, Tailwind CSS
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: PostgreSQL  
+- **Cache**: Redis
+- **Auth**: NextAuth.js
+- **Deployment**: Docker, Nginx
+
+## Поддержка
+
+Если у вас возникли проблемы:
+
+1. Проверьте логи: `make logs`
+2. Проверьте состояние: `make check-health`
+3. Просмотрите [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
+
+## Лицензия
+
+MIT License
