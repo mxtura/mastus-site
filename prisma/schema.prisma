@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Пользователи (администраторы)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?  
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  SUPER_ADMIN
+}
+
+// Продукты
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  category    ProductCategory
+  
+  // Технические характеристики
+  size        String?  // размер
+  thickness   String?  // толщина
+  weight      String?  // вес
+  load        String?  // нагрузка
+  material    String?  // материал
+  color       String?  // цвет
+  
+  // Дополнительные поля
+  advantages  String[] // преимущества
+  applications String[] // области применения
+  price       Float?   // цена
+  isActive    Boolean  @default(true)
+  
+  // Изображения
+  images      String[] // URLs изображений
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum ProductCategory {
+  MANHOLES      // Люки
+  SUPPORT_RINGS // Опорные кольца
+}
+
+// Обращения с сайта
+model ContactMessage {
+  id       String             @id @default(cuid())
+  name     String
+  company  String?
+  phone    String
+  email    String
+  subject  ContactSubject?
+  message  String
+  status   MessageStatus     @default(NEW)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ContactSubject {
+  PRICE     // запрос цены
+  ORDER     // размещение заказа
+  DELIVERY  // доставка
+  TECHNICAL // техническая консультация
+  OTHER     // другое
+}
+
+enum MessageStatus {
+  NEW       // новое
+  PROCESSING // в обработке
+  COMPLETED  // обработано
+  ARCHIVED   // архив
+}
