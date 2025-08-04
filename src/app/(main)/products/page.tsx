@@ -159,16 +159,26 @@ export default function Products() {
         </div>
 
         {/* Панель фильтров */}
-        <div className="bg-white rounded-lg shadow-sm border mb-8">
+        <div className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/50 rounded-2xl shadow-lg border border-blue-100/50 mb-8 overflow-hidden">
           {/* Заголовок с кнопкой для мобильных */}
-          <div className="p-4 sm:p-6 border-b border-gray-100 lg:border-b-0">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Фильтры и поиск</h2>
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.121A1 1 0 013 6.414V4z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Фильтры и поиск</h2>
+                  <p className="text-blue-100 text-sm">Найдите нужную продукцию</p>
+                </div>
+              </div>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
-                className="lg:hidden"
+                className="lg:hidden bg-white/20 hover:bg-white/30 text-white border-white/30"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.121A1 1 0 013 6.414V4z" />
@@ -179,11 +189,16 @@ export default function Products() {
           </div>
 
           {/* Фильтры */}
-          <div className={`p-4 sm:p-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className={`p-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Поиск */}
-              <div>
-                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="space-y-2">
+                <label htmlFor="search" className="flex items-center text-sm font-semibold text-gray-800 mb-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
                   Поиск по названию
                 </label>
                 <Input
@@ -192,17 +207,22 @@ export default function Products() {
                   placeholder="Введите название продукта..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
+                  className="w-full bg-white/70 border-blue-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all"
                 />
               </div>
 
               {/* Категория */}
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="space-y-2">
+                <label htmlFor="category" className="flex items-center text-sm font-semibold text-gray-800 mb-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
                   Категория
                 </label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white/70 border-blue-200 focus:border-blue-400 focus:ring-blue-400/20">
                     <SelectValue placeholder="Выберите категорию" />
                   </SelectTrigger>
                   <SelectContent>
@@ -214,8 +234,13 @@ export default function Products() {
               </div>
 
               {/* Ценовой диапазон */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-semibold text-gray-800 mb-3">
+                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mr-2">
+                    <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
                   Цена (₽)
                 </label>
                 <div className="flex gap-2">
@@ -224,25 +249,30 @@ export default function Products() {
                     placeholder="От"
                     value={priceRange.min}
                     onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-                    className="w-full"
+                    className="w-full bg-white/70 border-blue-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all"
                   />
                   <Input
                     type="number"
                     placeholder="До"
                     value={priceRange.max}
                     onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-                    className="w-full"
+                    className="w-full bg-white/70 border-blue-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all"
                   />
                 </div>
               </div>
 
               {/* Сортировка */}
-              <div>
-                <label htmlFor="sort" className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="space-y-2">
+                <label htmlFor="sort" className="flex items-center text-sm font-semibold text-gray-800 mb-3">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-2">
+                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                  </div>
                   Сортировка
                 </label>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white/70 border-blue-200 focus:border-blue-400 focus:ring-blue-400/20">
                     <SelectValue placeholder="Сортировать по" />
                   </SelectTrigger>
                   <SelectContent>
@@ -256,10 +286,20 @@ export default function Products() {
             </div>
 
             {/* Статистика результатов и кнопка сброса */}
-            <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <p className="text-sm text-gray-600">
-                Найдено продуктов: <span className="font-semibold">{filteredAndSortedProducts.length}</span> из {products.length}
-              </p>
+            <div className="mt-6 pt-6 border-t border-blue-200/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">
+                    Найдено продуктов: <span className="text-blue-600 text-lg">{filteredAndSortedProducts.length}</span> из {products.length}
+                  </p>
+                  <p className="text-xs text-gray-500">Результаты обновляются автоматически</p>
+                </div>
+              </div>
               <Button 
                 onClick={() => {
                   setSearchTerm('');
@@ -269,8 +309,11 @@ export default function Products() {
                 }}
                 variant="outline"
                 size="sm"
-                className="whitespace-nowrap"
+                className="whitespace-nowrap bg-white/80 hover:bg-white border-blue-300 text-blue-700 hover:text-blue-800 transition-all shadow-sm"
               >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
                 Сбросить фильтры
               </Button>
             </div>
@@ -375,8 +418,11 @@ export default function Products() {
                 setSortBy('name');
                 setPriceRange({ min: '', max: '' });
               }}
-              variant="outline"
+              className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg"
             >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
               Сбросить фильтры
             </Button>
           </div>

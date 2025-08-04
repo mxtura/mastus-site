@@ -40,7 +40,7 @@ export default function Home() {
                   Продукция
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto border-2 border-white text-white hover:bg-white hover:text-blue-600 shadow-lg transition-all">
+              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto border-2 border-white text-blue-600 hover:bg-white hover:text-blue-600 shadow-lg transition-all">
                 <Link href="/contacts">
                   Контакты
                 </Link>
@@ -155,7 +155,7 @@ export default function Home() {
                 Позвонить
               </a>
             </Button>
-            <Button asChild variant="outline" size="lg" className="border-2 border-white text-white hover:bg-white hover:text-blue-600">
+            <Button asChild variant="outline" size="lg" className="border-2 border-white text-blue-600 hover:bg-white hover:text-blue-600">
               <Link href="/contacts" className="flex items-center justify-center">
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
