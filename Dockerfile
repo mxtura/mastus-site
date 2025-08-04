@@ -12,6 +12,12 @@ RUN npm ci
 
 COPY . .
 
+# Проверяем, что файл правильно скопировался
+RUN echo "=== Проверка seed-data.js в builder ===" && \
+    ls -la scripts/seed-data.js && \
+    head -10 scripts/seed-data.js && \
+    echo "=== Конец проверки ==="
+
 # Генерируем Prisma клиент
 RUN npx prisma generate
 
