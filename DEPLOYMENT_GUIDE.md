@@ -135,8 +135,10 @@ podman-compose -f docker-compose.prod.yml ps
 ```
 
 Откройте браузер и проверьте:
-- `http://mxbox.fun` - главная страница
-- `http://admin.mxbox.fun` - админка (должна перенаправить на логин)
+- `http://mxbox.fun:8080` - главная страница
+- `http://admin.mxbox.fun:8080` - админка (должна перенаправить на логин)
+
+**Примечание:** Если хотите использовать стандартные порты 80/443 без указания порта в URL, вам нужно либо остановить системный Nginx, либо настроить его как reverse proxy (см. раздел "Решение проблем").
 
 ### 9. Настройка SSL (HTTPS)
 
@@ -238,8 +240,24 @@ docker-compose -f docker-compose.prod.yml exec app npx prisma db seed
 
 ### Ошибка "port already in use"
 Если получаете ошибку `bind: address already in use`:
-1. Найдите процесс: `sudo lsof -i :3000` (или :80, :443)
-2. Остановите процесс: `sudo pkill -f :3000`
+
+#### Для порта 80 (Nginx)
+1. Найдите процесс: `sudo lsof -i :80`
+2. Если это системный Nginx, у вас есть два варианта:
+
+**Вариант А: Использовать другой порт (рекомендуется)**
+- Наш контейнер Nginx настроен на порт 8080
+- Сайт будет доступен по адресу `http://mxbox.fun:8080`
+- Админка: `http://admin.mxbox.fun:8080`
+
+**Вариант Б: Остановить системный Nginx**
+```bash
+sudo systemctl stop nginx
+sudo systemctl disable nginx
+```
+Затем измените в `docker-compose.prod.yml` порты обратно на 80:443
+
+#### Для других портов
 3. Или остановите все контейнеры и запустите заново:
    ```bash
    podman-compose -f docker-compose.prod.yml down
@@ -283,6 +301,57 @@ docker-compose -f docker-compose.prod.yml exec app npx prisma db push
 1. Проверьте, что сертификат действителен
 2. Убедитесь, что Nginx правильно настроен
 3. Проверьте права доступа к файлам сертификатов
+
+### Настройка системного Nginx как reverse proxy (опционально)
+
+Если у вас уже установлен системный Nginx и вы хотите использовать стандартные порты 80/443, можно настроить его как reverse proxy:
+
+1. Создайте конфигурацию сайта:
+```bash
+sudo nano /etc/nginx/sites-available/mastus-site
+```
+
+2. Добавьте следующую конфигурацию:
+```nginx
+# Основной сайт
+server {
+    listen 80;
+    server_name mxbox.fun www.mxbox.fun;
+    
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# Админка
+server {
+    listen 80;
+    server_name admin.mxbox.fun;
+    
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+3. Активируйте конфигурацию:
+```bash
+sudo ln -s /etc/nginx/sites-available/mastus-site /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+4. Теперь сайт будет доступен на стандартных портах:
+   - `http://mxbox.fun` - главная страница
+   - `http://admin.mxbox.fun` - админка
 
 ## Безопасность
 
