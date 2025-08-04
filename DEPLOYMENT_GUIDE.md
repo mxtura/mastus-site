@@ -221,6 +221,11 @@ docker-compose -f docker-compose.prod.yml exec app npx prisma db seed
 2. Убедитесь, что все переменные окружения настроены правильно
 3. Проверьте, что база данных доступна
 
+### Ошибки сборки Docker
+Если возникают ошибки с отсутствующими зависимостями (например, `@tailwindcss/postcss`):
+1. Очистите Docker кэш: `docker system prune -a`
+2. Пересоберите образ: `docker build --no-cache -t mastus-site .`
+
 ### Админка недоступна
 1. Проверьте DNS настройки для `admin.mxbox.fun`
 2. Убедитесь, что создан администратор
@@ -230,6 +235,16 @@ docker-compose -f docker-compose.prod.yml exec app npx prisma db seed
 1. Проверьте, что контейнер PostgreSQL запущен
 2. Проверьте пароль в `.env`
 3. Убедитесь, что миграции выполнены
+
+### Ошибки миграций Prisma
+Если миграции не выполняются:
+```bash
+# Сбросить базу данных (ОСТОРОЖНО - удалит все данные!)
+docker-compose -f docker-compose.prod.yml exec app npx prisma migrate reset --force
+
+# Или выполнить миграции принудительно
+docker-compose -f docker-compose.prod.yml exec app npx prisma db push
+```
 
 ### SSL проблемы
 1. Проверьте, что сертификат действителен

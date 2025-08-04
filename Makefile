@@ -4,12 +4,13 @@
 COMPOSE_FILE = docker-compose.prod.yml
 PROJECT_NAME = mastus-site
 
-.PHONY: help build up down restart logs shell db-migrate create-admin check-health backup
+.PHONY: help build rebuild up down restart logs shell db-migrate create-admin check-health backup clean
 
 # Помощь
 help:
 	@echo "Доступные команды:"
 	@echo "  build         - Собрать образ приложения"
+	@echo "  rebuild       - Пересобрать образ с очисткой кэша"
 	@echo "  up           - Запустить все сервисы"
 	@echo "  down         - Остановить все сервисы"
 	@echo "  restart      - Перезапустить все сервисы"
@@ -19,11 +20,17 @@ help:
 	@echo "  create-admin - Создать администратора"
 	@echo "  check-health - Проверить состояние сервисов"
 	@echo "  backup       - Создать бэкап базы данных"
+	@echo "  clean        - Очистить Docker кэш и образы"
 
 # Сборка образа
 build:
 	@echo "🔨 Сборка образа..."
 	docker build -t $(PROJECT_NAME) .
+
+# Пересборка с очисткой кэша
+rebuild:
+	@echo "🧹 Очистка кэша и пересборка образа..."
+	docker build --no-cache -t $(PROJECT_NAME) .
 
 # Запуск сервисов
 up:
@@ -68,3 +75,9 @@ backup:
 	mkdir -p backups
 	docker-compose -f $(COMPOSE_FILE) exec postgres pg_dump -U mastus_user mastus_db > backups/backup_$(shell date +%Y%m%d_%H%M%S).sql
 	@echo "✅ Бэкап создан в папке backups/"
+
+# Очистка Docker кэша
+clean:
+	@echo "🧹 Очистка Docker кэша..."
+	docker system prune -a -f
+	@echo "✅ Кэш очищен"

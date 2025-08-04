@@ -1,19 +1,15 @@
 # Используем официальный Node.js образ
 FROM node:20-alpine AS base
 
-# Устанавливаем зависимости только когда нужно
-FROM base AS deps
+# Собираем приложение
+FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Копируем файлы зависимостей
+# Копируем package.json и устанавливаем ВСЕ зависимости (включая dev)
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+RUN npm ci
 
-# Собираем приложение
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Генерируем Prisma клиент
@@ -30,6 +26,10 @@ ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
+
+# Устанавливаем только production зависимости
+COPY package.json package-lock.json* ./
+RUN npm ci --only=production && npm cache clean --force
 
 # Копируем публичные файлы
 COPY --from=builder /app/public ./public

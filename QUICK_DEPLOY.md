@@ -44,6 +44,10 @@
    make db-migrate
    make create-admin
    
+   # Если возникают проблемы со сборкой:
+   make clean
+   make rebuild
+   
    # Или напрямую через Docker Compose
    docker build -t mastus-site .
    docker-compose -f docker-compose.prod.yml up -d
