@@ -236,7 +236,7 @@ async function seedMessages() {
 async function main() {
   console.log('Начинаем заполнение тестовыми данными...')
   
-  // await seedAdmin()
+  await seedAdmin()
   await seedProducts()
   await seedMessages()
   
