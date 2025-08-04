@@ -37,7 +37,11 @@ export async function rateLimit(identifier: string): Promise<{ success: boolean;
       pipeline.expire(key, Math.ceil(WINDOW_SIZE / 1000))
       
       const results = await pipeline.exec()
-      const currentCount = results?.[1] as number ?? 0
+      // Безопасное извлечение результата zCard
+      let currentCount = 0
+      if (results && results[1] !== null && results[1] !== undefined) {
+        currentCount = Number(results[1]) || 0
+      }
       
       if (currentCount >= MAX_REQUESTS) {
         return { success: false, remaining: 0 }
