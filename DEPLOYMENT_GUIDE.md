@@ -112,6 +112,18 @@ docker-compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
 podman-compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
 ```
 
+**Если таблицы не создались, выполните:**
+```bash
+# Принудительно примените схему к базе данных
+podman-compose -f docker-compose.prod.yml exec app npx prisma db push
+
+# Или создайте первую миграцию (если нет папки migrations)
+podman-compose -f docker-compose.prod.yml exec app npx prisma migrate dev --name init
+
+# В крайнем случае сбросьте базу (удалит все данные!)
+podman-compose -f docker-compose.prod.yml exec app npx prisma migrate reset --force
+```
+
 ### 7. Создание администратора
 
 Создайте учетную запись администратора:
