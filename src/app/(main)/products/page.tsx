@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ProductImage from "@/components/ProductImage";
 
 interface Product {
@@ -27,6 +29,13 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Состояние фильтрации
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('name');
+  const [priceRange, setPriceRange] = useState<{ min: string, max: string }>({ min: '', max: '' });
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -47,6 +56,36 @@ export default function Products() {
 
     fetchProducts();
   }, []);
+
+  // Фильтрация и сортировка продуктов
+  const filteredAndSortedProducts = products
+    .filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+      
+      // Фильтр по цене
+      const productPrice = product.price || 0;
+      const minPrice = priceRange.min ? parseFloat(priceRange.min) : 0;
+      const maxPrice = priceRange.max ? parseFloat(priceRange.max) : Infinity;
+      const matchesPrice = productPrice >= minPrice && productPrice <= maxPrice;
+      
+      return matchesSearch && matchesCategory && matchesPrice;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name, 'ru');
+        case 'price':
+          return (a.price || 0) - (b.price || 0);
+        case 'price-desc':
+          return (b.price || 0) - (a.price || 0);
+        case 'category':
+          return a.category.localeCompare(b.category);
+        default:
+          return 0;
+      }
+    });
 
   if (loading) {
     return (
@@ -119,9 +158,128 @@ export default function Products() {
           </p>
         </div>
 
+        {/* Панель фильтров */}
+        <div className="bg-white rounded-lg shadow-sm border mb-8">
+          {/* Заголовок с кнопкой для мобильных */}
+          <div className="p-4 sm:p-6 border-b border-gray-100 lg:border-b-0">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Фильтры и поиск</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="lg:hidden"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.121A1 1 0 013 6.414V4z" />
+                </svg>
+                {showFilters ? 'Скрыть' : 'Показать'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Фильтры */}
+          <div className={`p-4 sm:p-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Поиск */}
+              <div>
+                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+                  Поиск по названию
+                </label>
+                <Input
+                  id="search"
+                  type="text"
+                  placeholder="Введите название продукта..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Категория */}
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                  Категория
+                </label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите категорию" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все категории</SelectItem>
+                    <SelectItem value="MANHOLES">Люки</SelectItem>
+                    <SelectItem value="SUPPORT_RINGS">Опорные кольца</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Ценовой диапазон */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Цена (₽)
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="От"
+                    value={priceRange.min}
+                    onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="До"
+                    value={priceRange.max}
+                    onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Сортировка */}
+              <div>
+                <label htmlFor="sort" className="block text-sm font-medium text-gray-700 mb-2">
+                  Сортировка
+                </label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Сортировать по" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">По названию</SelectItem>
+                    <SelectItem value="price">По цене (возрастание)</SelectItem>
+                    <SelectItem value="price-desc">По цене (убывание)</SelectItem>
+                    <SelectItem value="category">По категории</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Статистика результатов и кнопка сброса */}
+            <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <p className="text-sm text-gray-600">
+                Найдено продуктов: <span className="font-semibold">{filteredAndSortedProducts.length}</span> из {products.length}
+              </p>
+              <Button 
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('all');
+                  setSortBy('name');
+                  setPriceRange({ min: '', max: '' });
+                }}
+                variant="outline"
+                size="sm"
+                className="whitespace-nowrap"
+              >
+                Сбросить фильтры
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Сетка продуктов */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
+          {filteredAndSortedProducts.map((product) => (
             <Link key={product.id} href={`/products/${product.id}`}>
               <Card className="hover:shadow-lg transition-shadow duration-300 group cursor-pointer">
                 <div className="aspect-video bg-gray-100 rounded-t-lg overflow-hidden">
@@ -199,6 +357,32 @@ export default function Products() {
         </div>
 
         {/* Пустое состояние */}
+        {filteredAndSortedProducts.length === 0 && !loading && products.length > 0 && (
+          <div className="text-center py-12">
+            <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">Ничего не найдено</h3>
+            <p className="text-gray-600 max-w-sm mx-auto mb-4">
+              Попробуйте изменить параметры поиска или фильтры
+            </p>
+            <Button 
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedCategory('all');
+                setSortBy('name');
+                setPriceRange({ min: '', max: '' });
+              }}
+              variant="outline"
+            >
+              Сбросить фильтры
+            </Button>
+          </div>
+        )}
+
+        {/* Пустое состояние - нет продуктов вообще */}
         {products.length === 0 && !loading && (
           <div className="text-center py-12">
             <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">

@@ -8,24 +8,10 @@ import { useState, useEffect } from "react";
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  const products = [
-    { id: 1, name: 'Люк стандартный', price: '2 500₽', category: 'luks', status: 'В наличии', description: 'Полимер-песчаный люк для колодцев водоснабжения', size: '750×60 мм', color: 'blue' },
-    { id: 2, name: 'Люк усиленный', price: '3 200₽', category: 'luks', status: 'В наличии', description: 'Усиленный люк повышенной прочности', size: '750×95 мм', color: 'blue' },
-    { id: 3, name: 'Кольцо опорное КО-6', price: '1 800₽', category: 'kolca', status: 'В наличии', description: 'Опорное кольцо диаметром 600 мм', size: 'КО-6', color: 'green' },
-    { id: 4, name: 'Кольцо опорное КО-7', price: '2 100₽', category: 'kolca', status: 'В наличии', description: 'Опорное кольцо диаметром 700 мм', size: 'КО-7', color: 'green' },
-    { id: 5, name: 'Люк телефонный', price: '2 700₽', category: 'luks', status: 'Под заказ', description: 'Специализированный люк для телефонных колодцев', size: '750×60 мм', color: 'purple' },
-    { id: 6, name: 'Комплект люк + кольцо', price: '3 650₽', category: 'komplekt', status: 'В наличии', description: 'Готовое решение: люк стандартный + кольцо КО-6', size: 'Люк + Кольцо', color: 'orange', originalPrice: '4 300₽' }
-  ];
-
-  const filteredProducts = activeFilter === 'all' 
-    ? products 
-    : products.filter(product => product.category === activeFilter);
 
   return (
     <div className="min-h-screen">
@@ -82,122 +68,65 @@ export default function Home() {
               Полимер-песчаные изделия для инженерных коммуникаций
             </p>
           </div>
-
-          {/* Filter */}
-          <div className="flex justify-center mb-12">
-            <div className="flex flex-wrap gap-3 bg-white rounded-xl p-2 shadow-md">
-              <button 
-                onClick={() => setActiveFilter('all')}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                  activeFilter === 'all' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Все товары
-              </button>
-              <button 
-                onClick={() => setActiveFilter('luks')}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                  activeFilter === 'luks' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Люки
-              </button>
-              <button 
-                onClick={() => setActiveFilter('kolca')}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                  activeFilter === 'kolca' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Кольца
-              </button>
-              <button 
-                onClick={() => setActiveFilter('komplekt')}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                  activeFilter === 'komplekt' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Комплекты
-              </button>
-            </div>
-          </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProducts.map((product) => (
-              <Card key={product.id} className="overflow-hidden shadow-md hover:shadow-lg transition-all">
-                <div className={`h-48 bg-gradient-to-br from-${product.color}-50 to-${product.color}-100 flex items-center justify-center relative`}>
-                  {product.originalPrice && (
-                    <div className="absolute top-3 right-3">
-                      <Badge className="bg-red-500">-15%</Badge>
-                    </div>
-                  )}
-                  {product.category === 'komplekt' && !product.originalPrice && (
-                    <div className="absolute top-3 right-3">
-                      <Badge className="bg-orange-500">Комплект</Badge>
-                    </div>
-                  )}
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 bg-white rounded-full flex items-center justify-center shadow-lg">
-                      {product.category === 'luks' && (
-                        <svg className={`w-8 h-8 text-${product.color}-600`} fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                        </svg>
-                      )}
-                      {product.category === 'kolca' && (
-                        <svg className={`w-8 h-8 text-${product.color}-600`} fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6"/>
-                        </svg>
-                      )}
-                      {product.category === 'komplekt' && (
-                        <svg className={`w-8 h-8 text-${product.color}-600`} fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M19,7H18V6A2,2 0 0,0 16,4H8A2,2 0 0,0 6,6V7H5A1,1 0 0,0 4,8V19A3,3 0 0,0 7,22H17A3,3 0 0,0 20,19V8A1,1 0 0,0 19,7M8,6H16V7H8V6M18,19A1,1 0 0,1 17,20H7A1,1 0 0,1 6,19V9H18V19Z"/>
-                        </svg>
-                      )}
-                    </div>
-                    <Badge variant="secondary" className="text-xs">{product.size}</Badge>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Люки */}
+            <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all">
+              <div className="h-48 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-3 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
                   </div>
+                  <Badge variant="secondary" className="text-xs">750×60/95 мм</Badge>
                 </div>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{product.name}</CardTitle>
-                  <CardDescription className="text-sm">
-                    {product.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {product.originalPrice && (
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-lg font-semibold text-gray-500 line-through">{product.originalPrice}</span>
-                      <Badge className="bg-red-500">-15%</Badge>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-xl font-bold text-gray-900">{product.price}</span>
-                    <Badge variant="outline" className={
-                      product.status === 'В наличии' 
-                        ? 'text-green-600' 
-                        : 'text-yellow-600'
-                    }>
-                      {product.status}
-                    </Badge>
+              </div>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl">Люки полимер-песчаные</CardTitle>
+                <CardDescription>
+                  Высококачественные люки для колодцев различного назначения
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="mb-4">
+                  <span className="text-2xl font-bold text-gray-900">от 2 500₽</span>
+                  <span className="text-sm text-gray-500 ml-2">/шт</span>
+                </div>
+                <Button asChild className="w-full">
+                  <Link href="/products">Смотреть все люки</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Кольца опорные */}
+            <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all">
+              <div className="h-48 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-3 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6"/>
+                    </svg>
                   </div>
-                  <Button asChild size="sm" className={`w-full ${
-                    product.color === 'green' ? 'bg-green-600 hover:bg-green-700' :
-                    product.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700' :
-                    product.color === 'orange' ? 'bg-orange-600 hover:bg-orange-700' :
-                    'bg-blue-600 hover:bg-blue-700'
-                  }`}>
-                    <Link href={`/products/${product.id}`}>Подробнее</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                  <Badge variant="secondary" className="text-xs">КО-6, КО-7</Badge>
+                </div>
+              </div>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl">Кольца опорные</CardTitle>
+                <CardDescription>
+                  Опорные кольца для установки люков и создания надежной конструкции
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="mb-4">
+                  <span className="text-2xl font-bold text-gray-900">от 1 800₽</span>
+                  <span className="text-sm text-gray-500 ml-2">/шт</span>
+                </div>
+                <Button asChild className="w-full bg-green-600 hover:bg-green-700">
+                  <Link href="/products">Смотреть все кольца</Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="text-center mt-12">
