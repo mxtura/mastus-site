@@ -25,7 +25,7 @@ export async function testRateLimit() {
 export async function clearRateLimitData(identifier: string) {
   try {
     const { default: redisClient } = await import('./redis')
-    if (redisClient.isReady()) {
+    if (redisClient && redisClient.isReady()) {
       const client = redisClient.getClient()
       await client.del(`rate_limit:${identifier}`)
       console.log(`✅ Очищены данные rate limiting для ${identifier}`)
