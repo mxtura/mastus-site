@@ -51,6 +51,16 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Копируем скрипты
 COPY --from=builder /app/scripts ./scripts
+
+# Проверяем, что файл правильно скопировался в runner
+RUN echo "=== Проверка seed-data.js в runner ===" && \
+    ls -la scripts/seed-data.js && \
+    head -10 scripts/seed-data.js && \
+    echo "=== Проверка seed-data-new.js в runner ===" && \
+    ls -la scripts/seed-data-new.js && \
+    head -10 scripts/seed-data-new.js && \
+    echo "=== Конец проверки runner ==="
+
 RUN chmod +x scripts/*.sh
 
 USER nextjs
