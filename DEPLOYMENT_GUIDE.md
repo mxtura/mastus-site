@@ -88,7 +88,20 @@ podman-compose -f docker-compose.prod.yml up -d
 
 **Примечание:** Сборка может занять несколько минут при первом запуске. Если сборка прошла успешно, вы увидите сообщение об успешном создании образа.
 
+**Важно:** Во время сборки может появиться ошибка `Environment variable not found: DATABASE_URL` - это нормально! Она возникает при генерации статических страниц, когда база данных еще недоступна. В рантайме все будет работать корректно.
+
 ### 6. Инициализация базы данных
+
+**Важно:** Дождитесь полного запуска всех контейнеров (особенно PostgreSQL) перед выполнением миграций.
+
+Проверьте статус контейнеров:
+```bash
+# С Podman
+podman-compose -f docker-compose.prod.yml ps
+
+# Если какие-то контейнеры не запустились, перезапустите их
+podman-compose -f docker-compose.prod.yml restart
+```
 
 Выполните миграции Prisma:
 ```bash
@@ -222,6 +235,16 @@ docker-compose -f docker-compose.prod.yml exec app npx prisma db seed
 1. Проверьте логи: `docker-compose -f docker-compose.prod.yml logs app`
 2. Убедитесь, что все переменные окружения настроены правильно
 3. Проверьте, что база данных доступна
+
+### Ошибка "port already in use"
+Если получаете ошибку `bind: address already in use`:
+1. Найдите процесс: `sudo lsof -i :3000` (или :80, :443)
+2. Остановите процесс: `sudo pkill -f :3000`
+3. Или остановите все контейнеры и запустите заново:
+   ```bash
+   podman-compose -f docker-compose.prod.yml down
+   podman-compose -f docker-compose.prod.yml up -d
+   ```
 
 ### Ошибки сборки Docker
 Если возникают ошибки с отсутствующими зависимостями (например, `@tailwindcss/postcss`):
