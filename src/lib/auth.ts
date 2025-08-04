@@ -60,16 +60,20 @@ export const authOptions: AuthOptions = {
       return session
     },
     async redirect({ url, baseUrl }) {
-      // Если это админский поддомен, перенаправляем на админскую панель
-      if (url.includes('admin.mastus.local') || baseUrl.includes('admin.mastus.local')) {
-        return 'http://admin.mastus.local:3000/dashboard'
+      // Получаем базовый URL из переменных окружения или используем baseUrl
+      const authUrl = process.env.NEXTAUTH_URL || baseUrl
+      
+      // Определяем, является ли это админским поддоменом
+      const isAdminSubdomain = baseUrl.includes('admin.') || url.includes('admin.')
+      
+      // Если авторизация успешна и это админский поддомен, перенаправляем в дашборд
+      if (isAdminSubdomain) {
+        const adminUrl = authUrl.replace(/^(https?:\/\/)/, '$1admin.')
+        return `${adminUrl}/dashboard`
       }
-      // Если это основной сайт, перенаправляем на основной сайт
-      if (url.includes('mastus.local') || baseUrl.includes('mastus.local')) {
-        return 'http://mastus.local:3000'
-      }
-      // По умолчанию используем админскую панель
-      return 'http://admin.mastus.local:3000/dashboard'
+      
+      // Если это основной сайт, возвращаем на главную
+      return authUrl
     }
   },
   pages: {
