@@ -5,68 +5,78 @@ const prisma = new PrismaClient()
 async function seedProducts() {
   const products = [
     {
-      name: 'Гидравлический пресс ГП-100',
-      description: 'Мощный гидравлический пресс для промышленного использования. Максимальное усилие 100 тонн.',
-      price: 450000,
-      category: 'HYDRAULIC',
-      specifications: {
-        maxForce: '100 тонн',
-        workingHeight: '1500 мм',
-        tableSize: '800x600 мм',
-        power: '7.5 кВт'
-      },
+      name: 'Люк чугунный тяжелый класса D400',
+      description: 'Люк канализационный чугунный для проезжей части дорог с интенсивным движением.',
+      price: 4500,
+      category: 'MANHOLES',
+      size: '600x600 мм',
+      thickness: '40 мм',
+      weight: '42 кг',
+      load: '40 тонн',
+      material: 'чугун СЧ20',
+      color: 'черный',
+      advantages: ['Высокая прочность', 'Устойчивость к коррозии', 'Долговечность'],
+      applications: ['Проезжая часть', 'Автомагистрали', 'Промышленные зоны'],
       isAvailable: true
     },
     {
-      name: 'Электродвигатель АИР-132М4',
-      description: 'Асинхронный трехфазный электродвигатель серии АИР. Надежность и долговечность.',
-      price: 28500,
-      category: 'ELECTRICAL',
-      specifications: {
-        power: '11 кВт',
-        voltage: '380В',
-        frequency: '50 Гц',
-        speed: '1500 об/мин'
-      },
+      name: 'Люк композитный легкий класса A15',
+      description: 'Легкий композитный люк для пешеходных зон и тротуаров.',
+      price: 2800,
+      category: 'MANHOLES',
+      size: '500x500 мм',
+      thickness: '30 мм',
+      weight: '15 кг',
+      load: '1.5 тонны',
+      material: 'композитный материал',
+      color: 'серый',
+      advantages: ['Легкий вес', 'Не подвержен коррозии', 'Экономичность'],
+      applications: ['Тротуары', 'Пешеходные зоны', 'Частные территории'],
       isAvailable: true
     },
     {
-      name: 'Пневматический цилиндр ПЦ-200',
-      description: 'Двустороннего действия с магнитными датчиками положения поршня.',
-      price: 12400,
-      category: 'PNEUMATIC',
-      specifications: {
-        bore: '200 мм',
-        stroke: '500 мм',
-        pressure: '0.6 МПа',
-        medium: 'сжатый воздух'
-      },
+      name: 'Опорное кольцо бетонное КС-15-9',
+      description: 'Железобетонное опорное кольцо для канализационных колодцев.',
+      price: 1200,
+      category: 'SUPPORT_RINGS',
+      size: 'диаметр 1500 мм',
+      thickness: '120 мм',
+      weight: '680 кг',
+      load: '25 тонн',
+      material: 'железобетон В25',
+      color: 'серый',
+      advantages: ['Высокая несущая способность', 'Морозостойкость', 'Стандартные размеры'],
+      applications: ['Канализационные колодцы', 'Водопроводные сети', 'Ливневая канализация'],
       isAvailable: true
     },
     {
-      name: 'Подшипник качения 6312',
-      description: 'Радиальный шариковый подшипник для средних нагрузок.',
-      price: 850,
-      category: 'SPARE_PARTS',
-      specifications: {
-        innerDiameter: '60 мм',
-        outerDiameter: '130 мм',
-        width: '31 мм',
-        load: '2000 кг'
-      },
+      name: 'Опорное кольцо полимерное КП-10-6',
+      description: 'Легкое полимерное опорное кольцо с высокой химической стойкостью.',
+      price: 2100,
+      category: 'SUPPORT_RINGS',
+      size: 'диаметр 1000 мм',
+      thickness: '80 мм',
+      weight: '45 кг',
+      load: '15 тонн',
+      material: 'полимер ПВХ',
+      color: 'оранжевый',
+      advantages: ['Легкий вес', 'Химическая стойкость', 'Простота монтажа'],
+      applications: ['Промышленные сети', 'Химические предприятия', 'Агрессивные среды'],
       isAvailable: true
     },
     {
-      name: 'Токарный станок ТС-16К20',
-      description: 'Универсальный токарно-винторезный станок для обработки различных деталей.',
+      name: 'Люк чугунный квадратный 800x800',
+      description: 'Усиленный чугунный люк квадратной формы для особо тяжелых условий эксплуатации.',
       price: null, // По запросу
-      category: 'MECHANICAL',
-      specifications: {
-        swingOverBed: '400 мм',
-        distanceBetweenCenters: '1000 мм',
-        spindleSpeed: '12.5-2000 об/мин',
-        power: '11 кВт'
-      },
+      category: 'MANHOLES',
+      size: '800x800 мм',
+      thickness: '50 мм',
+      weight: '85 кг',
+      load: '90 тонн',
+      material: 'чугун СЧ25',
+      color: 'черный',
+      advantages: ['Максимальная прочность', 'Антивандальные свойства', 'Увеличенный размер'],
+      applications: ['Аэропорты', 'Портовые территории', 'Складские комплексы'],
       isAvailable: true
     }
   ]
