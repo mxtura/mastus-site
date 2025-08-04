@@ -49,11 +49,12 @@ class AuditLogger {
   }
   
   // В production добавить сохранение в базу данных
-  private static async sendToExternalMonitoring(_entry: AuditLogEntry) {
+  private static async sendToExternalMonitoring(entry: AuditLogEntry) {
     // Пример интеграции с внешними системами:
     // - Sentry для error tracking
     // - DataDog для мониторинга
     // - ELK stack для логирования
+    console.log('External monitoring:', entry.action, entry.userId);
   }
 }
 

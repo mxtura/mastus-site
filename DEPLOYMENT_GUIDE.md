@@ -223,8 +223,12 @@ docker-compose -f docker-compose.prod.yml exec app npx prisma db seed
 
 ### Ошибки сборки Docker
 Если возникают ошибки с отсутствующими зависимостями (например, `@tailwindcss/postcss`):
-1. Очистите Docker кэш: `docker system prune -a`
-2. Пересоберите образ: `docker build --no-cache -t mastus-site .`
+1. Очистите Docker кэш: `podman system prune -a -f` (или `docker system prune -a -f`)
+2. Пересоберите образ: `podman build --no-cache -t mastus-site .` (или `docker build --no-cache -t mastus-site .`)
+
+Если возникают ошибки TypeScript (например, с типами PageProps в Next.js 15):
+- Проверьте, что все `params` в динамических маршрутах определены как `Promise<{...}>`
+- Убедитесь, что используете `await params` перед обращением к свойствам
 
 ### Админка недоступна
 1. Проверьте DNS настройки для `admin.mxbox.fun`

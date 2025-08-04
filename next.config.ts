@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   // Для создания standalone версии (нужно для Docker)
   output: 'standalone',
   
+  // Конфигурация изображений
+  images: {
+    domains: ['localhost', 'mxbox.fun', 'admin.mxbox.fun'],
+    unoptimized: false,
+  },
+  
   // Поддержка поддоменов - правильная конфигурация  
   async rewrites() {
     return [
