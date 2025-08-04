@@ -142,10 +142,32 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Проверка API админских роутов (только для админского поддомена или если путь содержит /api/admin)  
+  // Проверка API админских роутов (только админские эндпоинты)  
   if (pathname.startsWith('/api/admin') || 
-      pathname.startsWith('/api/products') || 
       pathname.startsWith('/api/messages')) {
+    try {
+      const token = await getToken({ 
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET 
+      })
+
+      if (!token || token.role !== 'ADMIN') {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' }, 
+          { status: 403 }
+        )
+      }
+    } catch (error) {
+      console.error('API auth error:', error)
+      return NextResponse.json(
+        { error: 'Ошибка аутентификации' }, 
+        { status: 401 }
+      )
+    }
+  }
+
+  // Проверяем только POST/PUT/DELETE запросы к /api/products (создание/изменение только для админов)
+  if (pathname.startsWith('/api/products') && request.method !== 'GET') {
     try {
       const token = await getToken({ 
         req: request,
@@ -191,10 +213,10 @@ export async function middleware(request: NextRequest) {
   response.headers.set(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api-maps.yandex.ru; " +
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api-maps.yandex.ru https://static.cloudflareinsights.com; " +
     "style-src 'self' 'unsafe-inline'; " +
     "img-src 'self' data: https:; " +
-    "connect-src 'self' https://api-maps.yandex.ru; " +
+    "connect-src 'self' https://api-maps.yandex.ru https://cloudflareinsights.com; " +
     "frame-src 'self' https://yandex.ru https://*.yandex.ru; " +
     "object-src 'none'; " +
     "base-uri 'self'; " +
