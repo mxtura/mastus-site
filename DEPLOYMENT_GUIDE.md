@@ -297,6 +297,17 @@ docker-compose -f docker-compose.prod.yml exec app npx prisma migrate reset --fo
 docker-compose -f docker-compose.prod.yml exec app npx prisma db push
 ```
 
+### Ошибки Nginx конфигурации
+Если Nginx контейнер не запускается с ошибкой `invalid value`:
+```bash
+# Проверьте логи
+podman-compose -f docker-compose.prod.yml logs nginx
+
+# Если проблема в nginx.conf, исправьте конфигурацию и перезапустите
+podman-compose -f docker-compose.prod.yml stop nginx
+podman-compose -f docker-compose.prod.yml up -d nginx
+```
+
 ### SSL проблемы
 1. Проверьте, что сертификат действителен
 2. Убедитесь, что Nginx правильно настроен
