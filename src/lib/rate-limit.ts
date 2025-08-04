@@ -18,7 +18,7 @@ export async function rateLimit(identifier: string): Promise<{ success: boolean;
 
   try {
     // Пытаемся использовать Redis
-    if (redisClient.isReady()) {
+    if (redisClient && redisClient.isReady()) {
       const client = redisClient.getClient()
       
       // Используем Redis sorted sets для sliding window
