@@ -34,8 +34,18 @@ export default function AdminLogin() {
         const session = await getSession();
         console.log('Session:', session);
         if (session && session.user?.role === 'ADMIN') {
-          // Используем полный URL для перенаправления на админский поддомен
-          window.location.href = 'http://admin.mastus.local:3000/dashboard';
+          // Определяем текущий домен и создаем админский поддомен динамически
+          const currentHost = window.location.host;
+          const protocol = window.location.protocol;
+          
+          // Если мы уже на админском поддомене, просто переходим в dashboard
+          if (currentHost.startsWith('admin.')) {
+            window.location.href = `${protocol}//${currentHost}/dashboard`;
+          } else {
+            // Создаем админский поддомен из текущего домена
+            const adminHost = `admin.${currentHost}`;
+            window.location.href = `${protocol}//${adminHost}/dashboard`;
+          }
         } else if (session) {
           setError("У вас нет прав администратора");
         }
