@@ -107,11 +107,9 @@ export async function getRedisClient(): Promise<RedisClient | null> {
 }
 
 // Singleton instance (только для сервера)
-let redisClient: RedisClient | null = null
+const redisClientInstance = typeof window === 'undefined' 
+  ? RedisClient.getInstance()
+  : null
 
-if (typeof window === 'undefined') {
-  redisClient = RedisClient.getInstance()
-}
-
-export { redisClient }
-export default redisClient
+export { redisClientInstance as redisClient }
+export default redisClientInstance

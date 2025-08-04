@@ -9,8 +9,10 @@ export default function RedisInitializer() {
     const initRedis = async () => {
       try {
         const { default: redisClient } = await import('@/lib/redis')
-        await redisClient.connect()
-        console.log('Redis initialized successfully')
+        if (redisClient) {
+          await redisClient.connect()
+          console.log('Redis initialized successfully')
+        }
       } catch (error) {
         console.warn('Redis initialization failed, will use in-memory fallback:', error)
       }

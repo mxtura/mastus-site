@@ -8,7 +8,20 @@ const nextConfig: NextConfig = {
   
   // Конфигурация изображений
   images: {
-    domains: ['localhost', 'mxbox.fun', 'admin.mxbox.fun'],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      }
+    ],
     unoptimized: false,
   },
   
