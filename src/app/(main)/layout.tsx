@@ -47,6 +47,9 @@ export default function MainSiteLayout({
                   Информация
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all group-hover:w-full"></span>
                 </Link>
+                <Link href="/color-tests" className="text-orange-600 hover:text-orange-700 px-3 py-2 text-sm font-medium transition-colors relative group border border-orange-200 rounded-md bg-orange-50">
+                  🎨 Тест цветов
+                </Link>
               </div>
             </div>
 
@@ -107,6 +110,13 @@ export default function MainSiteLayout({
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Информация
+                </Link>
+                <Link 
+                  href="/color-tests" 
+                  className="text-orange-600 hover:text-orange-700 block px-3 py-2 text-base font-medium border border-orange-200 rounded-md bg-orange-50 mx-3"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  🎨 Тест цветов
                 </Link>
               </div>
             </div>

@@ -60,6 +60,7 @@ model Product {
 enum ProductCategory {
   MANHOLES      // Люки
   SUPPORT_RINGS // Опорные кольца
+  LADDERS       // Лестницы
 }
 
 // Обращения с сайта

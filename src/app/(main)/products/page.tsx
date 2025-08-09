@@ -22,7 +22,8 @@ interface Product {
 
 const categoryNames = {
   MANHOLES: 'Люки',
-  SUPPORT_RINGS: 'Опорные кольца'
+  SUPPORT_RINGS: 'Опорные кольца',
+  LADDERS: 'Лестницы'
 };
 
 export default function Products() {
@@ -227,6 +228,7 @@ export default function Products() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все категории</SelectItem>
+                    <SelectItem value="LADDERS">Лестницы</SelectItem>
                     <SelectItem value="MANHOLES">Люки</SelectItem>
                     <SelectItem value="SUPPORT_RINGS">Опорные кольца</SelectItem>
                   </SelectContent>

@@ -27,7 +27,7 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-              ООО &quot;МАСТУС&quot;
+              ООО ФИРМА&quot;МАСТУС&quot;
             </h1>
             
             <p className="text-xl sm:text-2xl mb-8 text-blue-100 font-light">
@@ -70,51 +70,51 @@ export default function Home() {
           </div>
           
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Люки */}
+            {/* Лестницы */}
             <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all">
-              <div className="h-48 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+              <div className="h-48 bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-3 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <svg className="w-8 h-8 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M4,21V3H6V5H7V3H9V5H10V3H12V5H13V3H15V5H16V3H18V5H19V3H21V21H19V19H18V21H16V19H15V21H13V19H12V21H10V19H9V21H7V19H6V21H4M6,7V9H18V7H6M6,11V13H18V11H6M6,15V17H18V15H6Z"/>
+                    </svg>
+                  </div>
+                  <Badge variant="secondary" className="text-xs">1-3 секции</Badge>
+                </div>
+              </div>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl">Алюминиевые лестницы</CardTitle>
+                <CardDescription>
+                  Профессиональные лестницы из алюминиевого сплава для любых задач
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="mb-4">
+                  <span className="text-2xl font-bold text-gray-900">от 6 200₽</span>
+                  <span className="text-sm text-gray-500 ml-2">/шт</span>
+                </div>
+                <Button asChild className="w-full bg-orange-600 hover:bg-orange-700">
+                  <Link href="/products">Смотреть все лестницы</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Полимер-песчаные изделия */}
+            <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all">
+              <div className="h-48 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-3 bg-white rounded-full flex items-center justify-center shadow-lg">
                     <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
                     </svg>
                   </div>
-                  <Badge variant="secondary" className="text-xs">750×60/95 мм</Badge>
+                  <Badge variant="secondary" className="text-xs">Люки и кольца</Badge>
                 </div>
               </div>
               <CardHeader className="pb-3">
-                <CardTitle className="text-xl">Люки полимер-песчаные</CardTitle>
+                <CardTitle className="text-xl">Полимер-песчаные изделия</CardTitle>
                 <CardDescription>
-                  Высококачественные люки для колодцев различного назначения
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="mb-4">
-                  <span className="text-2xl font-bold text-gray-900">от 2 500₽</span>
-                  <span className="text-sm text-gray-500 ml-2">/шт</span>
-                </div>
-                <Button asChild className="w-full">
-                  <Link href="/products">Смотреть все люки</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Кольца опорные */}
-            <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all">
-              <div className="h-48 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-3 bg-white rounded-full flex items-center justify-center shadow-lg">
-                    <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6"/>
-                    </svg>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">КО-6, КО-7</Badge>
-                </div>
-              </div>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-xl">Кольца опорные</CardTitle>
-                <CardDescription>
-                  Опорные кольца для установки люков и создания надежной конструкции
+                  Люки и опорные кольца для инженерных коммуникаций
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
@@ -122,8 +122,8 @@ export default function Home() {
                   <span className="text-2xl font-bold text-gray-900">от 1 800₽</span>
                   <span className="text-sm text-gray-500 ml-2">/шт</span>
                 </div>
-                <Button asChild className="w-full bg-green-600 hover:bg-green-700">
-                  <Link href="/products">Смотреть все кольца</Link>
+                <Button asChild className="w-full">
+                  <Link href="/products">Смотреть люки и кольца</Link>
                 </Button>
               </CardContent>
             </Card>
