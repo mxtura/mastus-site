@@ -65,7 +65,7 @@ export default function AdminLogin() {
           <CardTitle className="text-2xl font-bold text-gray-900">
             Вход в админ-панель
           </CardTitle>
-          <p className="text-gray-600">ООО &quot;МАСТУС&quot;</p>
+          <p className="text-gray-600">Laddex</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -85,8 +85,8 @@ export default function AdminLogin() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="admin@mastus.ru"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                placeholder="admin@example.com"
               />
             </div>
 
@@ -100,7 +100,7 @@ export default function AdminLogin() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 placeholder="Введите пароль"
               />
             </div>

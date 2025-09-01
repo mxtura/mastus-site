@@ -97,7 +97,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const allowedCategories = ['MECHANICAL', 'ELECTRICAL', 'HYDRAULIC', 'PNEUMATIC', 'SPARE_PARTS', 'TOOLS', 'OTHER']
+  // Categories aligned with Prisma enum ProductCategory
+  const allowedCategories = ['MANHOLES', 'SUPPORT_RINGS', 'LADDERS']
     if (!allowedCategories.includes(data.category)) {
       return NextResponse.json(
         { error: 'Некорректная категория' }, 
@@ -111,8 +112,16 @@ export async function POST(request: NextRequest) {
         description: data.description?.trim() || null,
         price: data.price ? parseFloat(data.price) : null,
         category: data.category,
-        images: Array.isArray(data.images) ? data.images : [],
-        isActive: data.isActive ?? true
+        images: Array.isArray(data.images) ? data.images.slice(0,20) : [],
+        isActive: data.isActive ?? true,
+        size: data.size?.toString().slice(0,120) || null,
+        thickness: data.thickness?.toString().slice(0,120) || null,
+        weight: data.weight?.toString().slice(0,120) || null,
+        load: data.load?.toString().slice(0,120) || null,
+        material: data.material?.toString().slice(0,160) || null,
+        color: data.color?.toString().slice(0,120) || null,
+        advantages: Array.isArray(data.advantages) ? data.advantages.slice(0,25).map((a:string)=>a.toString().slice(0,240)) : [],
+        applications: Array.isArray(data.applications) ? data.applications.slice(0,25).map((a:string)=>a.toString().slice(0,240)) : []
       }
     })
     

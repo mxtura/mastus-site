@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { EMAIL_CONFIG } from '../src/lib/constants'
 
 const prisma = new PrismaClient()
 
@@ -15,7 +16,7 @@ async function main() {
   }
 
   // Создаем администратора
-  const email = process.env.ADMIN_EMAIL || 'admin@mastus.ru'
+  const email = EMAIL_CONFIG.admin
   const password = process.env.ADMIN_PASSWORD || 'admin123'
   
   const hashedPassword = await bcrypt.hash(password, 12)

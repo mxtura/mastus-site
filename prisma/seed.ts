@@ -1,12 +1,11 @@
-import { PrismaClient, ProductCategory } from '@prisma/client'
+import { PrismaClient, ProductCategory, ContactSubject, MessageStatus } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
-async function main() {
-  // Создаем админского пользователя
+async function seedAdmin() {
+  console.log('Создаем администратора...')
   const hashedPassword = await bcrypt.hash('admin123', 12)
-  
   const admin = await prisma.user.upsert({
     where: { email: 'admin@mastus.ru' },
     update: {},
@@ -17,174 +16,192 @@ async function main() {
       role: 'ADMIN'
     }
   })
+  console.log('Создан администратор:', admin.email)
+}
 
-  console.log('Created admin user:', admin)
-  
-  // Создаем тестовые продукты
-  const products = [
+async function seedProducts() {
+  console.log('Очищаем существующие продукты...')
+  await prisma.product.deleteMany({})
+
+  const products: Array<Parameters<typeof prisma.product.create>[0]['data']> = [
     {
-      name: 'Люк полимер-песчаный тип Т (25т)',
-      description: 'Полимер-песчаный люк для тяжелых нагрузок. Применяется на автомобильных дорогах и в местах с интенсивным движением транспорта.',
-      category: 'MANHOLES' as ProductCategory,
-      size: '700x700 мм',
-      thickness: '80 мм',
-      weight: '45 кг',
-      load: '25 тонн',
-      material: 'Полимер-песчаная смесь',
-      color: 'Черный, коричневый, зеленый',
+      name: 'Люки дачные',
+      description: 'Дачные люки: легкие, устойчивые к коррозии, подходят для частных участков и садовых зон.',
+      category: ProductCategory.MANHOLES,
+      images: ['/images/1000018986.png'],
       advantages: [
-        'Высокая прочность и долговечность',
-        'Устойчивость к химической коррозии',
-        'Морозостойкость до -50°C',
-        'Не подвержен краже',
-        'Не скользит при намокании'
+        'Легкий монтаж',
+        'Долговечный материал',
+        'Не подвержен коррозии'
+      ],
+      applications: [
+        'Частные участки',
+        'Садово-огородные зоны'
+      ],
+      isActive: true
+    },
+    {
+      name: 'Люки ГТС',
+      description: 'Люки для городских телекоммуникационных сетей и инженерной инфраструктуры.',
+      category: ProductCategory.MANHOLES,
+      images: ['/images/1000018987.png'],
+      advantages: [
+        'Прочность под городские нагрузки',
+        'Антивандальное исполнение',
+        'Устойчивость к химическому воздействию'
+      ],
+      applications: [
+        'Городские кабельные колодцы',
+        'Инженерные сети'
+      ],
+      isActive: true
+    },
+    {
+      name: 'Люк лёгкий 30кН',
+      description: 'Легкий люк для зон с минимальными нагрузками: газоны, пешеходные участки.',
+      category: ProductCategory.MANHOLES,
+      images: ['/images/1000018988.png'],
+      load: '30 кН',
+      advantages: [
+        'Низкий вес',
+        'Экономичность',
+        'Простой монтаж'
+      ],
+      applications: [
+        'Газоны',
+        'Пешеходные зоны'
+      ],
+      isActive: true
+    },
+    {
+      name: 'Люк тяжёлый 150-250кН',
+      description: 'Тяжёлый люк для автомобильных дорог и промышленных площадок с повышенными нагрузками.',
+      category: ProductCategory.MANHOLES,
+      images: ['/images/1000018990.png'],
+      load: '150-250 кН',
+      advantages: [
+        'Высокая несущая способность',
+        'Ударопрочность',
+        'Долгий срок службы'
       ],
       applications: [
         'Автомобильные дороги',
-        'Парковочные зоны',
-        'Промышленные территории',
-        'Городские магистрали'
-      ],
-      price: 3500.00,
-      images: [
-        '/images/products/manhole-t25-1.jpg',
-        '/images/products/manhole-t25-2.jpg'
+        'Промышленные территории'
       ],
       isActive: true
     },
     {
-      name: 'Люк полимер-песчаный тип А (12,5т)',
-      description: 'Полимер-песчаный люк для средних нагрузок. Идеально подходит для пешеходных зон и дворовых территорий.',
-      category: 'MANHOLES' as ProductCategory,
-      size: '600x600 мм',
-      thickness: '60 мм',
-      weight: '35 кг',
-      load: '12,5 тонн',
-      material: 'Полимер-песчаная смесь',
-      color: 'Черный, коричневый, зеленый',
+      name: 'Люк средний 70кН',
+      description: 'Средний люк для зон со смешанной нагрузкой: парковки, дворовые территории.',
+      category: ProductCategory.MANHOLES,
+      images: ['/images/1000018993.png'],
+      load: '70 кН',
       advantages: [
-        'Оптимальное соотношение цена-качество',
-        'Легкий вес для удобства монтажа',
-        'Устойчивость к ультрафиолету',
-        'Экологически безопасен',
-        'Бесшумность при проезде'
+        'Баланс цена/прочность',
+        'Надежная конструкция',
+        'Износостойкость'
       ],
       applications: [
-        'Пешеходные зоны',
-        'Дворовые территории',
-        'Парки и скверы',
-        'Тротуары'
-      ],
-      price: 2800.00,
-      images: [
-        '/images/products/manhole-a12-1.jpg',
-        '/images/products/manhole-a12-2.jpg'
+        'Парковки',
+        'Дворовые территории'
       ],
       isActive: true
     },
     {
-      name: 'Люк полимер-песчаный тип С (4т)',
-      description: 'Легкий полимер-песчаный люк для газонов и зеленых зон. Применяется в местах с минимальными нагрузками.',
-      category: 'MANHOLES' as ProductCategory,
-      size: '500x500 мм',
-      thickness: '40 мм',
-      weight: '20 кг',
-      load: '4 тонны',
-      material: 'Полимер-песчаная смесь',
-      color: 'Зеленый, черный',
+      name: 'Аллюминиевая трехсекционная универсальная лестница',
+      description: 'Трехсекционная универсальная алюминиевая лестница для профессионального и бытового применения.',
+      category: ProductCategory.LADDERS,
+      images: ['/images/IMG_5841.png'],
       advantages: [
-        'Минимальный вес',
-        'Возможность окраски в любой цвет',
-        'Устойчивость к перепадам температур',
-        'Простота установки',
-        'Низкая стоимость'
+        'Три режима использования',
+        'Прочный алюминиевый сплав',
+        'Компактное хранение'
       ],
       applications: [
-        'Газоны и клумбы',
-        'Зеленые зоны',
-        'Частные территории',
-        'Садово-парковые зоны'
-      ],
-      price: 1800.00,
-      images: [
-        '/images/products/manhole-c4-1.jpg',
-        '/images/products/manhole-c4-2.jpg'
+        'Строительно-монтажные работы',
+        'Склад',
+        'Домашнее использование'
       ],
       isActive: true
     },
     {
-      name: 'Кольцо опорное полимер-песчаное КО-1',
-      description: 'Опорное кольцо для установки люков. Обеспечивает надежную фиксацию и равномерное распределение нагрузки.',
-      category: 'SUPPORT_RINGS' as ProductCategory,
-      size: 'Ø700 мм, высота 100 мм',
-      thickness: '50 мм',
-      weight: '25 кг',
-      load: '25 тонн',
-      material: 'Полимер-песчаная смесь',
-      color: 'Черный, серый',
+      name: 'Аллюминиевая двухсекционная универсальная лестница',
+      description: 'Двухсекционная универсальная алюминиевая лестница с надежными фиксаторами.',
+      category: ProductCategory.LADDERS,
+      images: ['/images/IMG_5844.png'],
       advantages: [
-        'Точная геометрия',
-        'Устойчивость к деформации',
-        'Простота монтажа',
-        'Долговечность',
-        'Совместимость со всеми типами люков'
+        'Два режима (приставная / стремянка)',
+        'Легкость и прочность',
+        'Противоскользящие элементы'
       ],
       applications: [
-        'Установка тяжелых люков',
-        'Автомобильные дороги',
-        'Промышленные объекты',
-        'Городская инфраструктура'
-      ],
-      price: 1200.00,
-      images: [
-        '/images/products/ring-ko1-1.jpg',
-        '/images/products/ring-ko1-2.jpg'
-      ],
-      isActive: true
-    },
-    {
-      name: 'Кольцо опорное полимер-песчаное КО-2',  
-      description: 'Опорное кольцо средней нагрузки для установки люков типа А. Обеспечивает стабильность конструкции.',
-      category: 'SUPPORT_RINGS' as ProductCategory,
-      size: 'Ø600 мм, высота 80 мм',
-      thickness: '40 мм',
-      weight: '18 кг',
-      load: '12,5 тонн',
-      material: 'Полимер-песчаная смесь',
-      color: 'Черный, серый',
-      advantages: [
-        'Оптимальные размеры',
-        'Устойчивость к нагрузкам',
-        'Коррозионная стойкость',
-        'Морозостойкость',
-        'Экономичность'
-      ],
-      applications: [
-        'Установка средних люков',
-        'Дворовые территории',
-        'Пешеходные зоны',
-        'Парковые зоны'
-      ],
-      price: 900.00,
-      images: [
-        '/images/products/ring-ko2-1.jpg',
-        '/images/products/ring-ko2-2.jpg'
+        'Ремонт',
+        'Отделочные работы',
+        'Бытовые задачи'
       ],
       isActive: true
     }
   ]
 
-  // Очищаем существующие продукты и добавляем новые
-  await prisma.product.deleteMany({})
-  
   for (const product of products) {
-    await prisma.product.create({
-      data: product
-    })
-    console.log(`Created product: ${product.name}`)
+    await prisma.product.create({ data: product })
+    console.log(`Создан продукт: ${product.name}`)
   }
+}
 
-  console.log('Created test products')
+async function seedMessages() {
+  console.log('Создаем тестовые сообщения...')
+  const messages: Array<Parameters<typeof prisma.contactMessage.create>[0]['data']> = [
+    {
+      name: 'Иван Петров',
+      email: 'ivan.petrov@example.com',
+      phone: '+7 (495) 123-45-67',
+      company: 'ООО "ТехМаш"',
+      subject: ContactSubject.PRICE,
+      message: 'Добрый день! Интересует стоимость и сроки поставки люков полимер-песчаных тип Т. Нужна подробная техническая документация и расчет для 50 штук.',
+      status: MessageStatus.NEW
+    },
+    {
+      name: 'Мария Сидорова',
+      email: 'maria@metalworks.ru',
+      phone: '+7 (812) 987-65-43',
+      company: 'Металлообработка СПб',
+      subject: ContactSubject.TECHNICAL,
+      message: 'Нужна техническая консультация по подбору опорных колец для реконструкции канализационной сети. Диаметр колодцев 700-1000 мм.',
+      status: MessageStatus.PROCESSING
+    },
+    {
+      name: 'Алексей Козлов',
+      email: 'a.kozlov@stroy.com',
+      phone: '+7 (343) 555-12-34',
+      company: 'СтройДор',
+      subject: ContactSubject.ORDER,
+      message: 'Требуется регулярная поставка люков различных типов для дорожного строительства. Интересуют оптовые цены и условия поставки.',
+      status: MessageStatus.COMPLETED
+    },
+    {
+      name: 'Елена Волкова',
+      email: 'e.volkova@gorod.ru',
+      phone: '+7 (495) 777-88-99',
+      company: 'Управление городского хозяйства',
+      subject: ContactSubject.DELIVERY,
+      message: 'Уточните, пожалуйста, возможные сроки доставки в регионы и стоимость транспортировки для крупных партий.',
+      status: MessageStatus.NEW
+    }
+  ]
+
+  for (const msg of messages) {
+    await prisma.contactMessage.create({ data: msg })
+    console.log(`Создано сообщение от: ${msg.name}`)
+  }
+}
+
+async function main() {
+  console.log('Начинаем заполнение тестовыми данными...')
+  await seedAdmin()
+  await seedProducts()
+  await seedMessages()
+  console.log('Тестовые данные успешно добавлены!')
 }
 
 main()

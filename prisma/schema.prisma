@@ -92,3 +92,18 @@ enum MessageStatus {
   COMPLETED  // обработано
   ARCHIVED   // архив
 }
+
+// Редактируемый контент страниц
+model ContentPage {
+  id        String           @id @default(cuid())
+  page      ContentPageType  @unique
+  data      Json
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+enum ContentPageType {
+  HOME
+  CONTACTS
+  ABOUT
+}

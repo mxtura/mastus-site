@@ -7,23 +7,21 @@ export default function Info() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Заголовок */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Полезная информация</h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          <h1 className="text-4xl font-bold mb-4 heading tracking-wide">ПОЛЕЗНАЯ ИНФОРМАЦИЯ</h1>
+          <p className="text-lg text-neutral-600 max-w-3xl mx-auto">
             Техническая информация о полимер-песчаных изделиях, их применении и преимуществах
           </p>
         </div>
 
         {/* О полимер-песчаных изделиях */}
-        <section className="mb-16">
-          <Card className="p-8">
+        <section className="mb-20">
+          <Card className="p-10 border-neutral-300 bg-neutral-50 rounded-none">
             <CardHeader className="px-0 pt-0">
-              <CardTitle className="text-3xl font-bold text-gray-900 mb-6">
-                Что такое полимер-песчаные изделия?
-              </CardTitle>
+              <CardTitle className="text-2xl font-semibold tracking-wide text-neutral-900 mb-6">ЧТО ТАКОЕ ПОЛИМЕР-ПЕСЧАНЫЕ ИЗДЕЛИЯ?</CardTitle>
             </CardHeader>
             <CardContent className="px-0">
               <div className="grid lg:grid-cols-2 gap-8">
-                <div className="space-y-4 text-gray-600">
+                <div className="space-y-4 text-neutral-700 leading-relaxed">
                   <p>
                     Полимер-песчаные изделия — это композитные материалы, изготовленные из смеси 
                     полимерного связующего (обычно полиэтилен или полипропилен) и песка в качестве наполнителя.
@@ -39,19 +37,19 @@ export default function Info() {
                     и высокое качество готовых изделий.
                   </p>
                 </div>
-                <Card className="bg-blue-50 p-6">
+        <Card className="bg-white border border-neutral-300 p-6 rounded-none">
                   <CardHeader className="px-0 pt-0">
-                    <CardTitle className="text-xl font-semibold text-gray-900 mb-4">Состав материала:</CardTitle>
+          <CardTitle className="text-lg font-semibold tracking-wide text-neutral-900 mb-4">СОСТАВ МАТЕРИАЛА</CardTitle>
                   </CardHeader>
                   <CardContent className="px-0">
-                    <ul className="space-y-2 text-gray-600">
+          <ul className="space-y-2 text-neutral-700 text-sm">
                   <li><strong>75-80%</strong> - кварцевый песок (наполнитель)</li>
                   <li><strong>20-25%</strong> - полимерное связующее</li>
                   <li><strong>1-2%</strong> - красители и модификаторы</li>
                 </ul>
                 
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 mt-6">Основные свойства:</h3>
-                    <ul className="space-y-2 text-gray-600">
+        <h3 className="text-lg font-semibold tracking-wide text-neutral-900 mb-4 mt-6">ОСНОВНЫЕ СВОЙСТВА</h3>
+          <ul className="space-y-2 text-neutral-700 text-sm">
                       <li>• Плотность: 1,6-1,8 г/см³</li>
                       <li>• Прочность на сжатие: до 50 МПа</li>
                       <li>• Водопоглощение: менее 0,1%</li>
@@ -72,8 +70,8 @@ export default function Info() {
             </h2>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="overflow-x-auto border border-neutral-300 rounded-none">
+            <table className="w-full bg-white">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -373,24 +371,12 @@ export default function Info() {
         </section>
 
         {/* CTA */}
-        <section className="bg-blue-600 text-white rounded-lg p-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Нужна техническая консультация?</h2>
-          <p className="text-xl mb-8 text-blue-100">
-            Наши специалисты помогут выбрать оптимальное решение для вашего проекта
-          </p>
+  <section className="bg-neutral-900 text-white p-12 text-center border-y-4 border-[var(--primary)]">
+          <h2 className="text-3xl font-bold mb-4 heading tracking-wide">НУЖНА ТЕХНИЧЕСКАЯ КОНСУЛЬТАЦИЯ?</h2>
+          <p className="text-lg mb-10 text-neutral-300 tracking-wide">Поможем подобрать решение под ваш проект</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
-              href="tel:+7" 
-              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-            >
-              Получить консультацию
-            </a>
-            <Link 
-              href="/contacts" 
-              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
-            >
-              Написать нам
-            </Link>
+            <a href="tel:+7" className="bg-white text-neutral-900 px-10 py-3 font-semibold tracking-wide rounded-none hover:bg-neutral-200 transition-colors">ПОЗВОНИТЬ</a>
+            <Link href="/contacts" className="border-2 border-neutral-400 text-white px-10 py-3 font-semibold tracking-wide rounded-none hover:bg-white hover:text-neutral-900 transition-colors">НАПИСАТЬ</Link>
           </div>
         </section>
       </div>

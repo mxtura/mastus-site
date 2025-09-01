@@ -21,8 +21,22 @@ async function getProduct(id: string) {
 
 const categoryNames = {
   MANHOLES: 'Люки',
-  SUPPORT_RINGS: 'Опорные кольца'
+  SUPPORT_RINGS: 'Опорные кольца',
+  LADDERS: 'Лестницы'
 };
+
+async function getContactPhoneTel(): Promise<string | null> {
+  try {
+    const rows = await prisma.$queryRaw<Array<{ data: unknown }>>`SELECT data FROM "ContentPage" WHERE page = 'CONTACTS'::"ContentPageType" LIMIT 1`;
+    const raw = rows && rows.length ? rows[0].data : null;
+    if (!raw || typeof raw !== 'object') return null;
+    interface CD { phoneTel?: string }
+    const d = raw as CD;
+    return typeof d.phoneTel === 'string' ? d.phoneTel : null;
+  } catch {
+    return null;
+  }
+}
 
 interface PageProps {
   params: Promise<{
@@ -33,6 +47,7 @@ interface PageProps {
 export default async function ProductPage({ params }: PageProps) {
   const { id } = await params;
   const product = await getProduct(id);
+  const phoneTel = await getContactPhoneTel();
 
   if (!product) {
     notFound();
@@ -54,19 +69,19 @@ export default async function ProductPage({ params }: PageProps) {
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Изображения */}
           <div className="space-y-4">
-            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+            <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center p-4">
               {product.images && product.images.length > 0 ? (
                 <ProductImage
                   src={product.images[0]}
                   alt={product.name}
                   width={600}
                   height={600}
-                  className="w-full h-full object-cover"
+                  className="max-w-full max-h-full object-contain"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
-                  <div className="text-center text-blue-600">
-                    <div className="w-24 h-24 mx-auto mb-4 bg-blue-200 rounded-full flex items-center justify-center">
+                <div className="w-full h-full flex items-center justify-center bg-[var(--primary)]/5">
+                  <div className="text-center text-[var(--primary)]">
+                    <div className="w-24 h-24 mx-auto mb-4 bg-[var(--primary)]/20 rounded-none flex items-center justify-center border border-[var(--primary)]/30">
                       <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/>
                       </svg>
@@ -81,13 +96,13 @@ export default async function ProductPage({ params }: PageProps) {
             {product.images && product.images.length > 1 && (
               <div className="grid grid-cols-4 gap-2">
                 {product.images.slice(1).map((image, index) => (
-                  <div key={index} className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+          <div key={index} className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center p-2">
                     <ProductImage
                       src={image}
                       alt={`${product.name} ${index + 2}`}
                       width={150}
                       height={150}
-                      className="w-full h-full object-cover"
+            className="max-w-full max-h-full object-contain"
                     />
                   </div>
                 ))}
@@ -99,7 +114,7 @@ export default async function ProductPage({ params }: PageProps) {
           <div className="space-y-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <Badge variant="outline">
+                <Badge variant="tertiary">
                   {categoryNames[product.category as keyof typeof categoryNames]}
                 </Badge>
                 {product.price && (
@@ -120,7 +135,7 @@ export default async function ProductPage({ params }: PageProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Badge variant="outline">Характеристики</Badge>
+                  <Badge variant="tertiary">Характеристики</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -170,7 +185,7 @@ export default async function ProductPage({ params }: PageProps) {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-green-50 text-green-700">
+                    <Badge variant="tertiary" className="bg-transparent">
                       Преимущества
                     </Badge>
                   </CardTitle>
@@ -193,7 +208,7 @@ export default async function ProductPage({ params }: PageProps) {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                    <Badge variant="tertiary" className="bg-transparent">
                       Области применения
                     </Badge>
                   </CardTitle>
@@ -222,14 +237,14 @@ export default async function ProductPage({ params }: PageProps) {
                   консультации или размещения заказа
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button asChild className="flex-1">
+                  <Button asChild variant="tertiary" className="flex-1">
                     <Link href="/contacts" className="gap-2">
                       <Mail className="h-4 w-4" />
                       Отправить запрос
                     </Link>
                   </Button>
-                  <Button variant="outline" asChild className="flex-1">
-                    <Link href="tel:+7" className="gap-2">
+                  <Button variant="outline" asChild className="flex-1 border-[var(--tertiary)] text-[var(--tertiary)] hover:bg-[var(--tertiary)] hover:text-white">
+                    <Link href={phoneTel ? `tel:${phoneTel}` : '#'} className="gap-2">
                       <Phone className="h-4 w-4" />
                       Позвонить
                     </Link>

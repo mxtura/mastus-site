@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 
 export default function MainSiteLayout({
   children,
@@ -10,6 +11,51 @@ export default function MainSiteLayout({
   children: React.ReactNode;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [contact, setContact] = useState({
+    phoneTel: "",
+    emailInfo: "",
+    addressCityRegion: "",
+    telegramUsername: "",
+    whatsappNumber: "",
+  });
+
+  const TEL_MAIN_HREF = contact.phoneTel ? `tel:${contact.phoneTel}` : undefined;
+  const MAILTO_INFO = contact.emailInfo ? `mailto:${contact.emailInfo}` : undefined;
+  const TG_LINK = contact.telegramUsername ? `https://t.me/${contact.telegramUsername}` : undefined;
+  const WA_LINK = contact.whatsappNumber ? `https://wa.me/${contact.whatsappNumber}` : undefined;
+
+  const phoneDisplay = contact.phoneTel
+    ? contact.phoneTel.replace(/^\+?7?\s*(\d{3})(\d{3})(\d{2})(\d{2})$/, "+7 ($1) $2-$3-$4")
+    : "+7";
+
+  useEffect(() => {
+    let ignore = false;
+    async function load() {
+      try {
+        const res = await fetch('/api/content?type=CONTACTS', { next: { revalidate: 60 } });
+        if (!res.ok) return;
+        const payload = await res.json();
+        if (ignore) return;
+        type ContactsPayload = Partial<{
+          phoneTel: string;
+          emailInfo: string;
+          addressCityRegion: string;
+          telegramUsername: string;
+          whatsappNumber: string;
+        }>;
+        const d: ContactsPayload = (payload?.data || {}) as ContactsPayload;
+        setContact({
+          phoneTel: typeof d.phoneTel === 'string' ? d.phoneTel : "",
+          emailInfo: typeof d.emailInfo === 'string' ? d.emailInfo : "",
+          addressCityRegion: typeof d.addressCityRegion === 'string' ? d.addressCityRegion : "",
+          telegramUsername: typeof d.telegramUsername === 'string' ? d.telegramUsername : "",
+          whatsappNumber: typeof d.whatsappNumber === 'string' ? d.whatsappNumber : "",
+        });
+      } catch {}
+    }
+    load();
+    return () => { ignore = true };
+  }, []);
 
   return (
     <>
@@ -18,8 +64,8 @@ export default function MainSiteLayout({
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <Link href="/" className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                  ООО &quot;МАСТУС&quot;
+                <Link href="/" className="text-2xl font-bold text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors heading">
+                  Laddex
                 </Link>
               </div>
             </div>
@@ -27,29 +73,32 @@ export default function MainSiteLayout({
             {/* Desktop Menu */}
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-8">
-                <Link href="/" className="text-gray-900 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors relative group">
+                <a
+                  href={TEL_MAIN_HREF}
+                  className="text-gray-900 hover:text-[var(--tertiary)] px-3 py-2 text-sm font-semibold transition-colors relative group whitespace-nowrap"
+                  aria-label="Позвонить в Laddex"
+                >
+                  {phoneDisplay}
+                  
+                </a>
+                <Link href="/" className="text-gray-900 hover:text-[var(--primary)] px-3 py-2 text-sm font-medium transition-colors relative group">
                   Главная
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all group-hover:w-full"></span>
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[var(--tertiary)] transition-all group-hover:w-full"></span>
                 </Link>
-                <Link href="/products" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors relative group">
+                <Link href="/products" className="text-gray-700 hover:text-[var(--primary)] px-3 py-2 text-sm font-medium transition-colors relative group">
                   Продукция
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all group-hover:w-full"></span>
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[var(--tertiary)] transition-all group-hover:w-full"></span>
                 </Link>
-                <Link href="/about" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors relative group">
-                  О компании
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all group-hover:w-full"></span>
-                </Link>
-                <Link href="/contacts" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors relative group">
+                
+                <Link href="/contacts" className="text-gray-700 hover:text-[var(--primary)] px-3 py-2 text-sm font-medium transition-colors relative group">
                   Контакты
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all group-hover:w-full"></span>
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[var(--tertiary)] transition-all group-hover:w-full"></span>
                 </Link>
-                <Link href="/info" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors relative group">
-                  Информация
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all group-hover:w-full"></span>
+                <Link href="/about" className="text-gray-700 hover:text-[var(--primary)] px-3 py-2 text-sm font-medium transition-colors relative group">
+                  О компании
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[var(--tertiary)] transition-all group-hover:w-full"></span>
                 </Link>
-                <Link href="/color-tests" className="text-orange-600 hover:text-orange-700 px-3 py-2 text-sm font-medium transition-colors relative group border border-orange-200 rounded-md bg-orange-50">
-                  🎨 Тест цветов
-                </Link>
+                
               </div>
             </div>
 
@@ -76,48 +125,42 @@ export default function MainSiteLayout({
           {isMenuOpen && (
             <div className="md:hidden">
               <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+                <a
+                  href={TEL_MAIN_HREF}
+                  className="block px-3 py-2 text-base font-semibold text-[var(--primary)] hover:text-[var(--primary-hover)]"
+                  aria-label="Позвонить в Laddex"
+                >
+                  {phoneDisplay}
+                </a>
                 <Link 
                   href="/" 
-                  className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
+                  className="text-gray-700 hover:text-[var(--primary)] block px-3 py-2 text-base font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Главная
                 </Link>
                 <Link 
                   href="/products" 
-                  className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
+                  className="text-gray-700 hover:text-[var(--primary)] block px-3 py-2 text-base font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Продукция
                 </Link>
                 <Link 
-                  href="/about" 
-                  className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  О компании
-                </Link>
-                <Link 
                   href="/contacts" 
-                  className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
+                  className="text-gray-700 hover:text-[var(--primary)] block px-3 py-2 text-base font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Контакты
                 </Link>
                 <Link 
-                  href="/info" 
-                  className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
+                  href="/about" 
+                  className="text-gray-700 hover:text-[var(--primary)] block px-3 py-2 text-base font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Информация
+                  О компании
                 </Link>
-                <Link 
-                  href="/color-tests" 
-                  className="text-orange-600 hover:text-orange-700 block px-3 py-2 text-base font-medium border border-orange-200 rounded-md bg-orange-50 mx-3"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  🎨 Тест цветов
-                </Link>
+
               </div>
             </div>
           )}
@@ -128,75 +171,65 @@ export default function MainSiteLayout({
         {children}
       </main>
       
-      <footer className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+  <footer className="bg-black text-white">
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
-              <h3 className="text-2xl font-bold mb-4 text-blue-400">ООО &quot;МАСТУС&quot;</h3>
+              <h3 className="text-2xl font-bold mb-4 text-[var(--primary)] heading">Laddex</h3>
               <p className="text-gray-300 mb-4 max-w-md">
-                Производство и продажа качественных полимер-песчаных изделий для инженерных коммуникаций. 
+                Производство и продажа качественных алюминиевых лестниц и полимер-песчаных изделий для инженерных коммуникаций. 
                 Надежность, долговечность и профессиональный подход.
               </p>
               <div className="flex space-x-4">
-                <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
+                {/* WhatsApp */}
+                <a href={WA_LINK} aria-label="WhatsApp" className="text-gray-400 hover:text-[var(--primary)] transition-colors">
                   <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                    <path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.155 5.3 5.36 0 12.02 0a11.86 11.86 0 0111.89 11.887c0 6.56-5.35 11.864-11.987 11.864a11.9 11.9 0 01-5.688-1.448L.057 24zM6.6 19.36c1.676.995 3.276 1.591 5.392 1.591 5.448 0 9.92-4.44 9.92-9.907 0-5.462-4.472-9.886-9.934-9.886-5.463 0-9.887 4.424-9.887 9.886 0 2.225.725 3.891 1.938 5.523l-.999 3.648 3.57-.855zm11.387-5.464c-.073-.122-.268-.195-.56-.342-.292-.146-1.732-.853-2.002-.95-.268-.098-.463-.146-.657.146-.195.292-.755.95-.926 1.146-.17.195-.341.22-.633.073-.292-.146-1.233-.455-2.35-1.45-.868-.774-1.456-1.73-1.627-2.022-.17-.293-.018-.45.128-.596.132-.131.292-.341.438-.512.146-.171.195-.293.292-.488.097-.195.048-.366-.024-.512-.073-.146-.657-1.587-.9-2.173-.237-.569-.48-.49-.657-.5l-.561-.01c-.195 0-.512.073-.78.366-.268.292-1.024 1-1.024 2.438 0 1.438 1.048 2.833 1.195 3.028.146.195 2.066 3.159 5.01 4.428.701.302 1.249.482 1.674.617.703.224 1.343.192 1.848.116.564-.084 1.732-.708 1.975-1.392.244-.683.244-1.268.171-1.39z" />
                   </svg>
                 </a>
-                <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
+                {/* Telegram */}
+                <a href={TG_LINK} aria-label="Telegram" className="text-gray-400 hover:text-[var(--primary)] transition-colors">
                   <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
-                  </svg>
-                </a>
-                <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                    <path d="M12 0C5.373 0 0 5.373 0 12c0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12zm5.69 8.217c-.228 2.403-1.216 8.24-1.72 10.932-.213 1.146-.632 1.528-1.04 1.564-.884.082-1.557-.586-2.414-1.148-1.342-.88-2.1-1.428-3.404-2.28-1.507-.992-.53-1.536.33-2.428.226-.235 4.15-3.805 4.23-4.13.009-.04.018-.188-.07-.266-.088-.079-.218-.052-.311-.03-.132.03-2.23 1.417-6.294 4.162-.596.41-1.13.61-1.604.6-.528-.012-1.544-.298-2.3-.543-.928-.301-1.664-.46-1.6-.97.033-.264.397-.533 1.09-.808 4.29-1.868 7.155-3.096 8.596-3.684 4.093-1.702 4.944-1.997 5.5-2.006.122-.002.395.028.572.17.15.12.19.283.21.397-.018.093.003.298-.01.468z" />
                   </svg>
                 </a>
               </div>
             </div>
+            
             <div>
-              <h3 className="text-lg font-semibold mb-4 text-blue-400">Продукция</h3>
-              <ul className="text-gray-300 space-y-2">
-                <li><Link href="/products" className="hover:text-white transition-colors">Люки полимер-песчаные 750×60/95 мм</Link></li>
-                <li><Link href="/products" className="hover:text-white transition-colors">Кольца опорные КО-6</Link></li>
-                <li><Link href="/products" className="hover:text-white transition-colors">Кольца опорные КО-7</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-blue-400">Контакты</h3>
+              <h3 className="text-lg font-semibold mb-4 text-[var(--primary)]">Контакты</h3>
               <div className="text-gray-300 space-y-2">
                 <p className="flex items-center">
                   <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
                   </svg>
-                  <a href="tel:+7" className="hover:text-white transition-colors">+7 (XXX) XXX-XX-XX</a>
+                  <a href={TEL_MAIN_HREF} className="hover:text-white transition-colors">{phoneDisplay}</a>
                 </p>
                 <p className="flex items-center">
                   <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
                   </svg>
-                  <a href="mailto:info@mastus.ru" className="hover:text-white transition-colors">info@mastus.ru</a>
+                  <a href={MAILTO_INFO} className="hover:text-white transition-colors">{contact.emailInfo || 'info@site.ru'}</a>
                 </p>
                 <p className="flex items-center">
                   <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
                   </svg>
-                  г. Москва
+                  {contact.addressCityRegion || ''}
                 </p>
               </div>
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              &copy; 2025 ООО &quot;МАСТУС&quot;. Все права защищены.
+              &copy; 2025 Laddex. Все права защищены.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <Link href="/info" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Политика конфиденциальности
               </Link>
-              <Link href="/info" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Условия использования
               </Link>
             </div>

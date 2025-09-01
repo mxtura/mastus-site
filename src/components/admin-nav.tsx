@@ -16,6 +16,8 @@ const navigation = [
   { name: 'Дашборд', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Продукты', href: '/products', icon: Package },
   { name: 'Сообщения', href: '/messages', icon: MessageSquare },
+  { name: 'Контент', href: '/content', icon: LayoutDashboard },
+  { name: 'Настройки', href: '/settings', icon: User },
 ]
 
 export function AdminNav() {
@@ -34,9 +36,9 @@ export function AdminNav() {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <h1 className="text-xl font-bold text-gray-900">
-                МАСТУС
+                Laddex
               </h1>
-              <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+              <span className="ml-2 px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded">
                 Админ
               </span>
             </div>
@@ -51,7 +53,7 @@ export function AdminNav() {
                     href={item.href}
                     className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
                       isActive
-                        ? 'border-b-2 border-blue-500 text-gray-900'
+                        ? 'border-b-2 border-orange-500 text-gray-900'
                         : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -67,12 +69,12 @@ export function AdminNav() {
           <div className="flex items-center space-x-4">
             {session?.user && (
               <>
-                <div className="flex items-center space-x-2">
+                <Link href="/settings" className="flex items-center space-x-2 hover:underline">
                   <User className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-700">
                     {session.user.email}
                   </span>
-                </div>
+                </Link>
                 <Button
                   variant="outline"
                   size="sm"
@@ -99,7 +101,7 @@ export function AdminNav() {
                 href={item.href}
                 className={`block pl-3 pr-4 py-2 text-base font-medium ${
                   isActive
-                    ? 'bg-blue-50 border-r-4 border-blue-500 text-blue-700'
+                    ? 'bg-orange-50 border-r-4 border-orange-500 text-orange-700'
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
