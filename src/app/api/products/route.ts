@@ -20,30 +20,38 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const products = await prisma.product.findMany({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const products = await (prisma as any).product.findMany({
       where: { isActive: true }, // Показываем только активные продукты
       select: {
         id: true,
         name: true,
         description: true,
         price: true,
-        category: true,
+  attributes: true,
         images: true,
         advantages: true,
         applications: true,
-        size: true,
-        thickness: true,
-        weight: true,
-        load: true,
-        material: true,
-        color: true,
         createdAt: true,
-        // Не показываем внутренние поля
+        category: {
+          select: { code: true, nameRu: true }
+        }
       },
       orderBy: { createdAt: 'desc' }
     })
-    
-    return NextResponse.json(products, {
+
+    // Совместимость: возвращаем category как код + добавляем categoryNameRu
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const payload = products.map((p: any) => ({
+      ...p,
+      images: Array.isArray(p.images) ? p.images : (p.images ? Object.values(p.images) : []),
+      advantages: Array.isArray(p.advantages) ? p.advantages : [],
+      applications: Array.isArray(p.applications) ? p.applications : [],
+      category: p.category.code,
+      categoryNameRu: p.category.nameRu,
+    }))
+
+    return NextResponse.json(payload, {
       headers: {
         'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30'
@@ -97,38 +105,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
-  // Categories aligned with Prisma enum ProductCategory
-  const allowedCategories = ['MANHOLES', 'SUPPORT_RINGS', 'LADDERS']
-    if (!allowedCategories.includes(data.category)) {
-      return NextResponse.json(
-        { error: 'Некорректная категория' }, 
-        { status: 400 }
-      )
+    // Найдём категорию по коду
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const category = await (prisma as any).category.findUnique({ where: { code: data.category } })
+    if (!category) {
+      return NextResponse.json({ error: 'Категория не найдена' }, { status: 400 })
     }
-    
-    const product = await prisma.product.create({
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const product = await (prisma as any).product.create({
       data: {
         name: data.name.trim(),
         description: data.description?.trim() || null,
         price: data.price ? parseFloat(data.price) : null,
-        category: data.category,
+  categoryId: category.id,
         images: Array.isArray(data.images) ? data.images.slice(0,20) : [],
         isActive: data.isActive ?? true,
-        size: data.size?.toString().slice(0,120) || null,
-        thickness: data.thickness?.toString().slice(0,120) || null,
-        weight: data.weight?.toString().slice(0,120) || null,
-        load: data.load?.toString().slice(0,120) || null,
-        material: data.material?.toString().slice(0,160) || null,
-        color: data.color?.toString().slice(0,120) || null,
         advantages: Array.isArray(data.advantages) ? data.advantages.slice(0,25).map((a:string)=>a.toString().slice(0,240)) : [],
-        applications: Array.isArray(data.applications) ? data.applications.slice(0,25).map((a:string)=>a.toString().slice(0,240)) : []
+  applications: Array.isArray(data.applications) ? data.applications.slice(0,25).map((a:string)=>a.toString().slice(0,240)) : [],
+  attributes: data.attributes && typeof data.attributes === 'object' ? data.attributes : undefined,
       }
     })
     
     // Логирование действий админа
     console.log(`Admin ${session.user.email} created product: ${product.name}`)
     
-    return NextResponse.json(product, { status: 201 })
+  return NextResponse.json(product, { status: 201 })
   } catch (error) {
     console.error('Ошибка создания продукта:', error)
     return NextResponse.json(

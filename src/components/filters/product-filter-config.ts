@@ -13,12 +13,9 @@ export const productFilterConfigs: FilterConfig[] = [
     key: 'categories',
     label: 'Категории',
     type: 'multiselect',
-    options: [
-      { value: 'LADDERS', label: 'Лестницы' },
-      { value: 'MANHOLES', label: 'Люки' },
-      { value: 'SUPPORT_RINGS', label: 'Опорные кольца' }
-    ],
-    defaultValue: ['LADDERS', 'MANHOLES', 'SUPPORT_RINGS']
+  // options are injected dynamically from DB in the page
+  options: [],
+  defaultValue: []
   },
   {
     key: 'sortBy',

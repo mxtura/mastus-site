@@ -25,11 +25,35 @@ export async function GET() {
       )
     }
 
-    const products = await prisma.product.findMany({
-      orderBy: { createdAt: 'desc' }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const products = await (prisma as any).product.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        images: true,
+  attributes: true,
+        advantages: true,
+        applications: true,
+        category: { select: { code: true, nameRu: true } },
+      }
     })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const payload = products.map((p: any) => ({
+      ...p,
+      images: Array.isArray(p.images) ? p.images : (p.images ? Object.values(p.images) : []),
+      advantages: Array.isArray(p.advantages) ? p.advantages : [],
+      applications: Array.isArray(p.applications) ? p.applications : [],
+      category: p.category.code,
+      categoryNameRu: p.category.nameRu,
+    }))
     
-    return NextResponse.json(products)
+    return NextResponse.json(payload)
   } catch (error) {
     console.error('Ошибка получения продуктов:', error)
     return NextResponse.json(

@@ -43,6 +43,11 @@ export default function AdminSettingsPage() {
         body: JSON.stringify(payload)
       })
       if (res.ok) {
+        // If email changed propagate to session so top bar updates instantly
+        if (payload.email && payload.email !== session?.user.email) {
+          // Force client to refetch session by calling the built-in session endpoint
+          try { await fetch('/api/auth/session?update') } catch {}
+        }
         setPassword('')
       }
     } finally {

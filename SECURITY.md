@@ -10,8 +10,7 @@
 - ✅ Проверка ролей на API уровне
 
 ### 2. Защита API
-- ✅ **Redis Rate limiting** (100 запросов/минуту)
-- ✅ **In-memory fallback** при недоступности Redis
+// Rate limiting работает в памяти (Redis отключён)
 - ✅ **Sliding window** алгоритм для точного лимитирования
 - ✅ Валидация входных данных
 - ✅ Разделение публичных и админских API
@@ -29,8 +28,7 @@
 ```bash
 # Обязательно смените эти значения!
 NEXTAUTH_SECRET="your-super-secret-key-min-32-chars"
-DATABASE_URL="postgresql://user:password@localhost:5432/db"
-REDIS_URL="redis://localhost:6379"
+DATABASE_URL="mysql://user:password@localhost:3306/db"
 
 # Для production
 NEXTAUTH_URL="https://yourdomain.com"
@@ -78,8 +76,8 @@ NODE_ENV="production"
 **ДА!** Ваша архитектура соответствует industry standards:
 
 ### Похожие решения используют:
-- **Vercel** - Next.js + PostgreSQL + NextAuth
-- **Supabase** - PostgreSQL + Row Level Security
+- **Vercel** - Next.js + MySQL + NextAuth
+- **Supabase** - (PostgreSQL пример, проект использует MySQL)
 - **Hasura** - GraphQL + JWT + роли
 - **Auth0** - JWT токены + роли
 

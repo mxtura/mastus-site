@@ -46,9 +46,16 @@ export const authOptions: AuthOptions = {
     strategy: "jwt"
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // On initial sign in attach role & email
       if (user) {
-        token.role = user.role
+        const u = user as { role?: string; email?: string }
+        if (u.role) token.role = u.role
+        if (u.email) token.email = u.email
+      }
+      // When client calls session.update({ email }) propagate to token
+      if (trigger === 'update' && session?.email) {
+        token.email = session.email
       }
       return token
     },
@@ -56,6 +63,7 @@ export const authOptions: AuthOptions = {
       if (token) {
         session.user.id = token.sub!
         session.user.role = token.role as string
+        if (token.email) session.user.email = token.email as string
       }
       return session
     },

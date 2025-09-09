@@ -1,8 +1,8 @@
 "use client"
 
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -28,36 +28,69 @@ interface Product {
   createdAt: string
   updatedAt: string
   images: string[]
-  size: string | null
-  thickness: string | null
-  weight: string | null
-  load: string | null
-  material: string | null
-  color: string | null
+  attributes?: Record<string, unknown>
   advantages: string[]
   applications: string[]
 }
 
-const categoryLabels: Record<string,string> = {
-  MANHOLES: 'Люки',
-  SUPPORT_RINGS: 'Опорные кольца',
-  LADDERS: 'Лестницы'
-}
+// Категории подмешиваем из API ответа (categoryNameRu) и формируем словарь
 
 const maxImages = 10
 
-export default function ProductsPage() {
+function AdminProductsPageInner() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [categoriesMap, setCategoriesMap] = useState<Record<string,string>>({})
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [filters, setFilters] = useState<AdminProductFilters>(initialAdminProductFilters)
-  const [showFilters, setShowFilters] = useState(true)
+  const [formError, setFormError] = useState<string>('')
+  const [filters, setFilters] = useState<AdminProductFilters>(() => {
+    // Initialize from URL
+    const categoriesParam = searchParams?.getAll('categories')
+    const catSingle = searchParams?.get('categories')
+    const categoriesFromQuery = categoriesParam && categoriesParam.length
+      ? categoriesParam
+      : (catSingle ? catSingle.split(',') : undefined)
 
-  const emptyForm = { name: '', description: '', price: '', category: 'LADDERS', isActive: true, images: '', size: '', thickness: '', weight: '', load: '', material: '', color: '', advantages: '', applications: '' }
+    const text = searchParams?.get('text') || ''
+    const sorting = searchParams?.get('sorting') || initialAdminProductFilters.sortBy
+    const currencyPrice = searchParams?.get('currency_price') || ''
+    const statusQ = (searchParams?.get('status') || 'ALL').toUpperCase() as AdminProductFilters['status']
+    const priceFilterQ = (searchParams?.get('price_filter') || 'ALL').toUpperCase() as AdminProductFilters['priceFilter']
+
+    const priceRange = (() => {
+      if (!currencyPrice) return { min: '', max: '' }
+      const [minRaw, maxRaw] = currencyPrice.split('-')
+      return { min: (minRaw || '').trim(), max: (maxRaw || '').trim() }
+    })()
+
+    return {
+      searchText: text,
+      categories: categoriesFromQuery && categoriesFromQuery.length ? (categoriesFromQuery as string[]) : initialAdminProductFilters.categories,
+      status: ['ALL','ACTIVE','INACTIVE'].includes(statusQ) ? statusQ : 'ALL',
+      priceFilter: ['ALL','WITH_PRICE','ON_REQUEST'].includes(priceFilterQ) ? priceFilterQ : 'ALL',
+      priceRange,
+      sortBy: sorting
+    }
+  })
+  const [showFilters, setShowFilters] = useState(true)
+  // Категории с параметрами (метаданные)
+  type CategoryParamMeta = { parameter: { id: string; code: string; nameRu: string }, visible: boolean, required: boolean }
+  const [categoriesMetaByCode, setCategoriesMetaByCode] = useState<Record<string, { id: string; nameRu: string; params: CategoryParamMeta[] }>>({})
+  // Динамические опции для фильтра категорий
+  const dynamicFilterConfigs = (() => {
+    const catOptions = Object.entries(categoriesMap).map(([value,label])=>({ value, label }))
+    return adminProductFilterConfigs.map(cfg => (
+      cfg.key === 'categories' ? { ...cfg, options: catOptions } : cfg
+    ))
+  })()
+
+  const emptyForm = { name: '', description: '', price: '', category: 'LADDERS', isActive: true, images: '', attributes: {} as Record<string, unknown>, advantages: '', applications: '' }
   const [formData, setFormData] = useState({ ...emptyForm })
 
   // Применяем фильтры к продуктам
@@ -79,14 +112,126 @@ export default function ProductsPage() {
     }
   }, [router])
 
+  const fetchCategoriesMeta = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/categories')
+      if (!res.ok) return
+      const cats: Array<{ id: string; code: string; nameRu: string; params?: CategoryParamMeta[] }> = await res.json()
+      const byCode: Record<string, { id: string; nameRu: string; params: CategoryParamMeta[] }> = {}
+      const map: Record<string, string> = {}
+      for (const c of cats) {
+        byCode[c.code] = { id: c.id, nameRu: c.nameRu, params: (c.params || []).filter(p=>p.visible) }
+        map[c.code] = c.nameRu || c.code
+      }
+      setCategoriesMetaByCode(byCode)
+      setCategoriesMap(map)
+    } catch (e) {
+      console.error('Ошибка загрузки категорий:', e)
+    }
+  }, [])
+
   useEffect(() => {
     if (status === 'loading') return
     if (!session || session.user.role !== 'ADMIN') { router.push('/admin/login'); return }
     fetchProducts()
-  }, [status, session, router, fetchProducts])
+    fetchCategoriesMeta()
+  }, [status, session, router, fetchProducts, fetchCategoriesMeta])
+
+  // Когда подгрузили список категорий, по умолчанию выбираем все, если пусто
+  useEffect(() => {
+    const allCodes = Object.keys(categoriesMap)
+    if (allCodes.length && (!filters.categories || filters.categories.length === 0)) {
+      setFilters(prev => ({ ...prev, categories: allCodes }))
+    }
+  }, [categoriesMap, filters.categories, setFilters])
+
+  // Sync filters when URL changes (e.g., navigation)
+  useEffect(() => {
+    const categoriesParam = searchParams?.getAll('categories')
+    const catSingle = searchParams?.get('categories')
+    const categoriesFromQuery = categoriesParam && categoriesParam.length
+      ? categoriesParam
+      : (catSingle ? catSingle.split(',') : undefined)
+
+    const text = searchParams?.get('text') || ''
+    const sorting = searchParams?.get('sorting') || initialAdminProductFilters.sortBy
+    const currencyPrice = searchParams?.get('currency_price') || ''
+    const statusQ = (searchParams?.get('status') || 'ALL').toUpperCase() as AdminProductFilters['status']
+    const priceFilterQ = (searchParams?.get('price_filter') || 'ALL').toUpperCase() as AdminProductFilters['priceFilter']
+
+    const priceRange = (() => {
+      if (!currencyPrice) return { min: '', max: '' }
+      const [minRaw, maxRaw] = currencyPrice.split('-')
+      return { min: (minRaw || '').trim(), max: (maxRaw || '').trim() }
+    })()
+
+    setFilters(prev => {
+      const next: AdminProductFilters = {
+        searchText: text,
+        // If URL provides categories, use them; otherwise preserve current selection
+        categories: categoriesFromQuery && categoriesFromQuery.length ? (categoriesFromQuery as string[]) : prev.categories,
+        status: ['ALL','ACTIVE','INACTIVE'].includes(statusQ) ? statusQ : 'ALL',
+        priceFilter: ['ALL','WITH_PRICE','ON_REQUEST'].includes(priceFilterQ) ? priceFilterQ : 'ALL',
+        priceRange,
+        sortBy: sorting
+      }
+      const same = (
+        prev.searchText === next.searchText &&
+        prev.sortBy === next.sortBy &&
+        prev.status === next.status &&
+        prev.priceFilter === next.priceFilter &&
+        prev.priceRange.min === next.priceRange.min &&
+        prev.priceRange.max === next.priceRange.max &&
+        prev.categories.length === next.categories.length &&
+        prev.categories.every((c, i) => c === next.categories[i])
+      )
+      return same ? prev : next
+    })
+  }, [searchParams])
+
+  const updateUrlFromFilters = (nextFilters: AdminProductFilters) => {
+    const params = new URLSearchParams(searchParams?.toString() || '')
+
+    // text
+    if (nextFilters.searchText && nextFilters.searchText.trim() !== '') params.set('text', nextFilters.searchText.trim())
+    else params.delete('text')
+
+    // sorting
+    if (nextFilters.sortBy && nextFilters.sortBy !== initialAdminProductFilters.sortBy) params.set('sorting', nextFilters.sortBy)
+    else params.delete('sorting')
+
+    // currency_price as min-max
+    const min = (nextFilters.priceRange?.min || '').trim()
+    const max = (nextFilters.priceRange?.max || '').trim()
+    if (min !== '' || max !== '') params.set('currency_price', `${min}-${max}`)
+    else params.delete('currency_price')
+
+    // status
+    if (nextFilters.status && nextFilters.status !== initialAdminProductFilters.status) params.set('status', nextFilters.status)
+    else params.delete('status')
+
+    // price_filter
+    if (nextFilters.priceFilter && nextFilters.priceFilter !== initialAdminProductFilters.priceFilter) params.set('price_filter', nextFilters.priceFilter)
+    else params.delete('price_filter')
+
+    // categories
+    params.delete('categories')
+  const allCategories = Object.keys(categoriesMap)
+    const selected = nextFilters.categories || []
+    const isAllSelected = selected.length === allCategories.length && selected.every(c => allCategories.includes(c))
+    if (!isAllSelected && selected.length > 0) selected.forEach(c => params.append('categories', c))
+
+    const query = params.toString()
+    router.replace(`${pathname}${query ? `?${query}` : ''}`)
+  }
+
+  const handleFiltersChange = (next: AdminProductFilters) => {
+    setFilters(next)
+    updateUrlFromFilters(next)
+  }
 
   const startCreate = () => { setFormData({ ...emptyForm }); setEditingId(null); setIsDialogOpen(true) }
-  const startEdit = (p: Product) => { setFormData({ name: p.name, description: p.description || '', price: p.price?.toString() || '', category: p.category, isActive: p.isActive, images: (p.images||[]).join('\n'), size: p.size||'', thickness: p.thickness||'', weight: p.weight||'', load: p.load||'', material: p.material||'', color: p.color||'', advantages: (p.advantages||[]).join('\n'), applications: (p.applications||[]).join('\n') }); setEditingId(p.id); setIsDialogOpen(true) }
+  const startEdit = (p: Product) => { setFormError(''); setFormData({ name: p.name, description: p.description || '', price: p.price?.toString() || '', category: p.category, isActive: p.isActive, images: (p.images||[]).join('\n'), attributes: (p.attributes as Record<string, unknown>) || {}, advantages: (p.advantages||[]).join('\n'), applications: (p.applications||[]).join('\n') }); setEditingId(p.id); setIsDialogOpen(true) }
   const handleDelete = async (id: string) => { if (!confirm('Удалить продукт?')) return; try { const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' }); if (res.ok) fetchProducts() } catch(e){ console.error(e) } }
 
   const handleImageUpload = async (file: File) => {
@@ -108,7 +253,22 @@ export default function ProductsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); if (submitting) return; setSubmitting(true)
     try {
-      const payload = { name: formData.name.trim(), description: formData.description.trim() || null, price: formData.price ? parseFloat(formData.price) : null, category: formData.category, isActive: formData.isActive, images: formData.images.split('\n').map(s=>s.trim()).filter(Boolean), size: formData.size||null, thickness: formData.thickness||null, weight: formData.weight||null, load: formData.load||null, material: formData.material||null, color: formData.color||null, advantages: formData.advantages.split('\n').map(s=>s.trim()).filter(Boolean), applications: formData.applications.split('\n').map(s=>s.trim()).filter(Boolean) }
+      setFormError('')
+      const meta = categoriesMetaByCode[formData.category]
+      const requiredParams = (meta?.params || []).filter(p => p.required)
+      const attrs = formData.attributes as Record<string, unknown>
+      const missing = requiredParams.filter(p => !attrs || !attrs[p.parameter.code] || String(attrs[p.parameter.code]).trim() === '')
+      if (missing.length) {
+        setFormError(`Заполните обязательные параметры: ${missing.map(m=>m.parameter.nameRu || m.parameter.code).join(', ')}`)
+        setSubmitting(false)
+        return
+      }
+      const cleanedAttrs: Record<string, unknown> = {}
+      for (const p of meta?.params || []) {
+        const v = (attrs ?? {})[p.parameter.code]
+        if (v !== undefined && String(v).trim() !== '') cleanedAttrs[p.parameter.code] = v
+      }
+      const payload = { name: formData.name.trim(), description: formData.description.trim() || null, price: formData.price ? parseFloat(formData.price) : null, category: formData.category, isActive: formData.isActive, images: formData.images.split('\n').map(s=>s.trim()).filter(Boolean), attributes: cleanedAttrs, advantages: formData.advantages.split('\n').map(s=>s.trim()).filter(Boolean), applications: formData.applications.split('\n').map(s=>s.trim()).filter(Boolean) }
       const res = await fetch(editingId ? `/api/admin/products/${editingId}` : '/api/products', { method: editingId ? 'PATCH':'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
       if (res.ok) { setIsDialogOpen(false); setFormData({ ...emptyForm }); setEditingId(null); fetchProducts() }
     } catch(err){ console.error('Ошибка сохранения продукта', err) } finally { setSubmitting(false) }
@@ -155,7 +315,7 @@ export default function ProductsPage() {
                     <Select value={formData.category} onValueChange={v=>setFormData({...formData,category:v})}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {Object.entries(categoryLabels).map(([k,l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
+                        {Object.entries(categoriesMap).map(([k,l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -194,24 +354,30 @@ export default function ProductsPage() {
                     <Textarea id="advantages" rows={3} value={formData.advantages} onChange={e=>setFormData({...formData,advantages:e.target.value})} />
                   </div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="applications">Применение (строка=пункт)</Label>
                     <Textarea id="applications" rows={3} value={formData.applications} onChange={e=>setFormData({...formData,applications:e.target.value})} />
                   </div>
-                  <div className="grid gap-2">
-                    <Label>Характеристики</Label>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <Input placeholder="Размер" value={formData.size} onChange={e=>setFormData({...formData,size:e.target.value})} />
-                      <Input placeholder="Толщина" value={formData.thickness} onChange={e=>setFormData({...formData,thickness:e.target.value})} />
-                      <Input placeholder="Вес" value={formData.weight} onChange={e=>setFormData({...formData,weight:e.target.value})} />
-                      <Input placeholder="Нагрузка" value={formData.load} onChange={e=>setFormData({...formData,load:e.target.value})} />
-                      <Input placeholder="Материал" value={formData.material} onChange={e=>setFormData({...formData,material:e.target.value})} />
-                      <Input placeholder="Цвет" value={formData.color} onChange={e=>setFormData({...formData,color:e.target.value})} />
-                    </div>
-                  </div>
                 </div>
-              </div>
+                {/* Динамические параметры категории */}
+                <div className="grid gap-2">
+                  <Label>Параметры категории</Label>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {(categoriesMetaByCode[formData.category]?.params || []).map(cp => {
+                      const code = cp.parameter.code
+                      const label = cp.parameter.nameRu || code
+                      const val = (formData.attributes as Record<string, unknown>)[code] ?? ''
+                      return (
+                        <div key={code} className="grid gap-1">
+                          <Label className="text-xs">{label}{cp.required ? ' *' : ''} <span className="text-[10px] text-gray-500">({code})</span></Label>
+                          <Input value={String(val)} onChange={e=>setFormData(prev=>({ ...prev, attributes: { ...(prev.attributes as Record<string, unknown>), [code]: e.target.value } }))} />
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <p className="text-[11px] text-gray-500">Состав параметров управляется в разделе «Категории».</p>
+                </div>
+                {formError && <p className="text-sm text-red-600">{formError}</p>}
               <DialogFooter className="mt-4">
                 <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); setEditingId(null) }}>Отмена</Button>
                 <Button type="submit" disabled={submitting}>{submitting ? 'Сохранение...' : editingId ? 'Сохранить' : 'Добавить'}</Button>
@@ -226,8 +392,8 @@ export default function ProductsPage() {
         <FilterPanel
           title="Фильтр продуктов"
           filters={filters}
-          onFiltersChange={(newFilters) => setFilters(newFilters as AdminProductFilters)}
-          filterConfigs={adminProductFilterConfigs}
+          onFiltersChange={(newFilters) => handleFiltersChange(newFilters as AdminProductFilters)}
+          filterConfigs={dynamicFilterConfigs}
           resultsCount={filteredProducts.length}
           totalCount={products.length}
           showFilters={showFilters}
@@ -256,7 +422,7 @@ export default function ProductsPage() {
               <h2 className="text-xl font-bold heading">{p.name}</h2>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Badge variant="tertiary" className="flex-shrink-0">
-                  {categoryLabels[p.category] || p.category}
+                  {categoriesMap[p.category] || p.category}
                 </Badge>
                 <Badge variant={p.isActive ? 'default':'secondary'} className="flex-shrink-0">
                   {p.isActive ? 'Доступен':'Скрыт'}
@@ -267,12 +433,9 @@ export default function ProductsPage() {
               <div className="space-y-4">
                 {p.description && <p className="text-sm text-gray-600 leading-relaxed">{p.description.length>140 ? p.description.slice(0,140)+'…' : p.description}</p>}
                 <div className="flex flex-wrap gap-2 text-[11px] text-gray-500">
-                  {p.size && <span>Размер: {p.size}</span>}
-                  {p.thickness && <span>Толщина: {p.thickness}</span>}
-                  {p.weight && <span>Вес: {p.weight}</span>}
-                  {p.load && <span>Нагрузка: {p.load}</span>}
-                  {p.material && <span>Материал: {p.material}</span>}
-                  {p.color && <span>Цвет: {p.color}</span>}
+                  {p.attributes && typeof p.attributes === 'object' && Object.entries(p.attributes as Record<string, unknown>).slice(0,4).map(([k,v])=> (
+                    <span key={k}>{k}: {String(v)}</span>
+                  ))}
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="text-lg font-semibold">{p.price ? `${p.price.toLocaleString()} ₽` : 'По запросу'}</div>
@@ -300,5 +463,13 @@ export default function ProductsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen">Загрузка...</div>}>
+      <AdminProductsPageInner />
+    </Suspense>
   )
 }

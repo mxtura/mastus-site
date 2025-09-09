@@ -6,8 +6,8 @@
 
 - 🌐 **Поддержка субдоменов**: главный сайт и админка на разных поддоменах
 - 🔐 **Безопасная авторизация**: NextAuth.js с ролевой системой  
-- 📊 **База данных**: PostgreSQL с Prisma ORM
-- ⚡ **Кэширование**: Redis для rate limiting и кэширования
+- 📊 **База данных**: MySQL с Prisma ORM
+- ⚡ **Rate limiting**: in-memory (Redis можно подключить отдельно, сейчас отключено)
 - 🐳 **Docker Ready**: полная поддержка Docker/Podman
 - 🔒 **Безопасность**: rate limiting, CSP заголовки, защита от XSS
 - 📱 **Responsive**: адаптивный дизайн с Tailwind CSS
@@ -33,9 +33,9 @@
    # Отредактируйте .env файл
    ```
 
-4. **Запустите базы данных:**
+4. **Запустите базу данных:**
    ```bash
-   docker-compose up -d postgres redis
+   docker-compose up -d mysql
    ```
 
 5. **Выполните миграции:**
@@ -120,12 +120,12 @@ npm run admin:create    # Создать админа
 ### Переменные окружения
 
 ```env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/db"
-POSTGRES_PASSWORD="secure_password"
+# Database (MySQL)
+DATABASE_URL="mysql://user:password@localhost:3306/db"
+MYSQL_PASSWORD="secure_password"
 
-# Redis  
-REDIS_URL="redis://localhost:6379"
+# (Опционально) Redis – сейчас не используется
+# REDIS_URL="redis://localhost:6379"
 
 # NextAuth
 NEXTAUTH_URL="https://yourdomain.com"
@@ -167,9 +167,9 @@ docker-compose -f docker-compose.prod.yml ps
 # Создать бэкап
 make backup
 
-# Восстановить из бэкапа  
-docker-compose -f docker-compose.prod.yml exec -T postgres \
-  psql -U mastus_user mastus_db < backup.sql
+# Восстановить из бэкапа (MySQL)
+docker-compose -f docker-compose.prod.yml exec -T mysql \
+   sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < /backup/backup.sql'
 ```
 
 ## Разработка
@@ -185,8 +185,8 @@ docker-compose -f docker-compose.prod.yml exec -T postgres \
 
 - **Frontend**: Next.js 15, React 19, Tailwind CSS
 - **Backend**: Next.js API Routes, Prisma ORM
-- **Database**: PostgreSQL  
-- **Cache**: Redis
+- **Database**: MySQL  
+- **Cache**: (опционально) Redis
 - **Auth**: NextAuth.js
 - **Deployment**: Docker, Nginx
 

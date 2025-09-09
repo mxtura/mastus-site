@@ -54,8 +54,7 @@ echo "🔧 Проверка переменных окружения:"
 
 if [ -f ".env" ]; then
     check_env_var "DATABASE_URL"
-    check_env_var "POSTGRES_PASSWORD"
-    check_env_var "REDIS_URL"
+    check_env_var "MYSQL_PASSWORD"
     check_env_var "NEXTAUTH_URL"
     check_env_var "NEXTAUTH_SECRET"
 else

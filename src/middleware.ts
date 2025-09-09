@@ -88,7 +88,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Для чистых путей на админском поддомене проверяем авторизацию и делаем rewrite
-  if (pathname === '/dashboard' || pathname === '/products' || pathname === '/messages' || pathname === '/content' || pathname === '/settings') {
+  if (pathname === '/dashboard' || pathname === '/products' || pathname === '/messages' || pathname === '/content' || pathname === '/settings' || pathname === '/categories') {
       try {
         const token = await getToken({ 
           req: request,
@@ -108,7 +108,7 @@ export async function middleware(request: NextRequest) {
   console.log('✅ Admin subdomain - admin access granted for:', pathname, '- rewriting to /admin' + pathname)
         // Делаем rewrite на настоящий путь
         const url = request.nextUrl.clone()
-        url.pathname = '/admin' + pathname
+    url.pathname = '/admin' + pathname
         return NextResponse.rewrite(url)
       } catch (error) {
         console.error('Middleware auth error:', error)
@@ -117,7 +117,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Для всех реальных админских путей проверяем авторизацию
-  if (pathname.startsWith('/admin/dashboard') || pathname.startsWith('/admin/products') || pathname.startsWith('/admin/messages') || pathname.startsWith('/admin/content') || pathname.startsWith('/admin/settings')) {
+  if (pathname.startsWith('/admin/dashboard') || pathname.startsWith('/admin/products') || pathname.startsWith('/admin/messages') || pathname.startsWith('/admin/content') || pathname.startsWith('/admin/settings') || pathname.startsWith('/admin/categories')) {
       try {
         const token = await getToken({ 
           req: request,

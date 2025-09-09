@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
+import { URLS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { 
   LayoutDashboard, 
@@ -15,6 +16,7 @@ import {
 const navigation = [
   { name: 'Дашборд', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Продукты', href: '/products', icon: Package },
+  { name: 'Категории', href: '/categories', icon: Package },
   { name: 'Сообщения', href: '/messages', icon: MessageSquare },
   { name: 'Контент', href: '/content', icon: LayoutDashboard },
   { name: 'Настройки', href: '/settings', icon: User },
@@ -25,7 +27,16 @@ export function AdminNav() {
   const { data: session } = useSession()
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: '/login' })
+    // Build absolute admin login URL from current host to avoid wrong domain redirects
+    const target = (() => {
+      if (typeof window !== 'undefined') {
+        const { protocol, host } = window.location
+        const adminHost = host.startsWith('admin.') ? host : `admin.${host}`
+        return `${protocol}//${adminHost}/login`
+      }
+      return `${URLS.admin}/login`
+    })()
+    signOut({ callbackUrl: target })
   }
 
   return (

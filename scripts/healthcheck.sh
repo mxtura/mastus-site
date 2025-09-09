@@ -28,11 +28,11 @@ else
     echo "❌ Основное приложение недоступно"
 fi
 
-# Проверка базы данных
-if nc -z localhost 5432 2>/dev/null; then
-    echo "✅ PostgreSQL (localhost:5432) - OK"
+# Проверка базы данных (MySQL)
+if nc -z localhost 3306 2>/dev/null; then
+    echo "✅ MySQL (localhost:3306) - OK"
 else
-    echo "❌ PostgreSQL недоступен"
+    echo "❌ MySQL недоступен"
 fi
 
 # Проверка Redis

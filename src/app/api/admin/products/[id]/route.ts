@@ -27,28 +27,31 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const data = await request.json()
 
-    const allowedCategories = ['MANHOLES', 'SUPPORT_RINGS', 'LADDERS']
-    if (data.category && !allowedCategories.includes(data.category)) {
-      return NextResponse.json({ error: 'Некорректная категория' }, { status: 400 })
+    // если передана категория — найдём её id по коду
+    let categoryIdToSet: string | undefined = undefined
+    if (data.category) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cat = await (prisma as any).category.findUnique({ where: { code: data.category } })
+      if (!cat) {
+        return NextResponse.json({ error: 'Категория не найдена' }, { status: 400 })
+      }
+      categoryIdToSet = cat.id
     }
 
-    const updated = await prisma.product.update({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updated = await (prisma as any).product.update({
       where: { id },
       data: {
         name: data.name?.trim(),
         description: data.description?.trim(),
         price: data.price !== undefined && data.price !== null && data.price !== '' ? parseFloat(data.price) : null,
-        category: data.category,
+        ...(categoryIdToSet ? { categoryId: categoryIdToSet } : {}),
         isActive: data.isActive,
         images: Array.isArray(data.images) ? data.images.slice(0,20) : undefined,
-        size: data.size?.toString().slice(0,120),
-        thickness: data.thickness?.toString().slice(0,120),
-        weight: data.weight?.toString().slice(0,120),
-        load: data.load?.toString().slice(0,120),
-        material: data.material?.toString().slice(0,160),
-        color: data.color?.toString().slice(0,120),
         advantages: Array.isArray(data.advantages) ? data.advantages.slice(0,25).map((a:string)=>a.toString().slice(0,240)) : undefined,
         applications: Array.isArray(data.applications) ? data.applications.slice(0,25).map((a:string)=>a.toString().slice(0,240)) : undefined,
+  // dynamic attributes bag; validate key/value types lightly
+  attributes: data.attributes && typeof data.attributes === 'object' ? data.attributes : undefined,
       }
     })
 

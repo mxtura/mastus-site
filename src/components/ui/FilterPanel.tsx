@@ -210,9 +210,32 @@ export function FilterPanel<T extends BaseFilters>({
                 if (config.type === 'multiselect') {
                   return (
                     <div key={config.key} className="space-y-2">
-                      <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 mb-2 uppercase">
-                        {config.label}
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 uppercase">
+                          {config.label}
+                        </label>
+                        {config.key === 'categories' && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-none h-7 px-2 text-xs"
+                            onClick={() => {
+                              const currentValues = isStringArray(value) ? value : [];
+                              const all = (config.options?.map(o => o.value) || []);
+                              const isAllSelected = currentValues.length === all.length && all.every(v => currentValues.includes(v));
+                              updateFilter(config.key, isAllSelected ? [] : all);
+                            }}
+                          >
+                            {(() => {
+                              const currentValues = isStringArray(value) ? value : [];
+                              const all = (config.options?.map(o => o.value) || []);
+                              const isAllSelected = currentValues.length === all.length && all.every(v => currentValues.includes(v));
+                              return isAllSelected ? 'Снять все' : 'Выбрать все';
+                            })()}
+                          </Button>
+                        )}
+                      </div>
                       <div className="border border-neutral-300 bg-white p-3 rounded-none">
                         <div className="grid grid-cols-1 gap-2">
                           {config.options?.map((option) => {

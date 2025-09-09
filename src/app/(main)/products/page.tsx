@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,53 +11,158 @@ import { productFilterConfigs, initialProductFilters, ProductFilters } from '@/c
 import { applyProductFilters, Product as ProductType } from '@/components/filters/filter-utils';
 import ProductImage from '@/components/ProductImage';
 
-const categoryNames = {
-  MANHOLES: 'Люки',
-  SUPPORT_RINGS: 'Опорные кольца',
-  LADDERS: 'Лестницы'
-};
+// Название категории берём из API (categoryNameRu), иначе показываем код
 
 function ProductsPageInner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(true);
+  const [categoriesMap, setCategoriesMap] = useState<Record<string,string>>({});
 
   // Инициализируем фильтры с учётом query
   const [filters, setFilters] = useState<ProductFilters>(() => {
+    // Build initial filters from URL query
     const categoriesParam = searchParams?.getAll('categories');
     const catSingle = searchParams?.get('categories');
-    const fromQuery = categoriesParam && categoriesParam.length
+    const categoriesFromQuery = categoriesParam && categoriesParam.length
       ? categoriesParam
       : (catSingle ? catSingle.split(',') : undefined);
 
-    if (fromQuery && fromQuery.length) {
-      return { ...initialProductFilters, categories: fromQuery as string[] };
-    }
-    return initialProductFilters;
+    const text = searchParams?.get('text') || '';
+    const sorting = searchParams?.get('sorting') || initialProductFilters.sortBy;
+    const currencyPrice = searchParams?.get('currency_price') || '';
+
+    const priceRange = (() => {
+      if (!currencyPrice) return { min: '', max: '' };
+      const [minRaw, maxRaw] = currencyPrice.split('-');
+      return {
+        min: (minRaw || '').trim(),
+        max: (maxRaw || '').trim()
+      };
+    })();
+
+    return {
+      searchText: text,
+      categories: categoriesFromQuery && categoriesFromQuery.length
+        ? (categoriesFromQuery as string[])
+        : initialProductFilters.categories,
+      sortBy: sorting,
+      priceRange
+    };
   });
 
   // Синхронизируем смену query после монтирования (на случай client nav)
   useEffect(() => {
+    // Sync filters from URL when query changes (e.g., back/forward, external link)
     const catSingle = searchParams?.get('categories');
     const categoriesParam = searchParams?.getAll('categories');
-    const fromQuery = categoriesParam && categoriesParam.length
+    const categoriesFromQuery = categoriesParam && categoriesParam.length
       ? categoriesParam
       : (catSingle ? catSingle.split(',') : undefined);
-    if (fromQuery) {
-      setFilters(prev => ({ ...prev, categories: fromQuery as string[] }));
-    }
+
+    const text = searchParams?.get('text') || '';
+    const sorting = searchParams?.get('sorting') || initialProductFilters.sortBy;
+    const currencyPrice = searchParams?.get('currency_price') || '';
+    const priceRange = (() => {
+      if (!currencyPrice) return { min: '', max: '' };
+      const [minRaw, maxRaw] = currencyPrice.split('-');
+      return {
+        min: (minRaw || '').trim(),
+        max: (maxRaw || '').trim()
+      };
+    })();
+
+    setFilters(prev => {
+      const next: ProductFilters = {
+        searchText: text,
+        // If URL has explicit categories -> use them; else preserve current categories
+        categories: categoriesFromQuery && categoriesFromQuery.length
+          ? (categoriesFromQuery as string[])
+          : prev.categories,
+        sortBy: sorting,
+        priceRange
+      };
+      // Avoid unnecessary state updates
+      if (
+        prev.searchText === next.searchText &&
+        prev.sortBy === next.sortBy &&
+        prev.priceRange.min === next.priceRange.min &&
+        prev.priceRange.max === next.priceRange.max &&
+        prev.categories.length === next.categories.length &&
+        prev.categories.every((c, i) => c === next.categories[i])
+      ) {
+        return prev;
+      }
+      return next;
+    });
   }, [searchParams]);
+
+  // Update URL when filters change via UI
+  const updateUrlFromFilters = (nextFilters: ProductFilters) => {
+    const params = new URLSearchParams(searchParams?.toString() || '');
+
+    // text => searchText
+    if (nextFilters.searchText && nextFilters.searchText.trim() !== '') {
+      params.set('text', nextFilters.searchText.trim());
+    } else {
+      params.delete('text');
+    }
+
+    // sorting => sortBy
+    if (nextFilters.sortBy && nextFilters.sortBy !== initialProductFilters.sortBy) {
+      params.set('sorting', nextFilters.sortBy);
+    } else {
+      params.delete('sorting');
+    }
+
+    // currency_price => priceRange "min-max"
+    const min = (nextFilters.priceRange?.min || '').trim();
+    const max = (nextFilters.priceRange?.max || '').trim();
+    if (min !== '' || max !== '') {
+      params.set('currency_price', `${min}-${max}`);
+    } else {
+      params.delete('currency_price');
+    }
+
+    // categories (multi) => only include if not all categories selected
+    params.delete('categories');
+  const allCategories = Object.keys(categoriesMap);
+    const selected = nextFilters.categories || [];
+    const isAllSelected = selected.length === allCategories.length && selected.every(c => allCategories.includes(c));
+    if (!isAllSelected && selected.length > 0) {
+      selected.forEach(c => params.append('categories', c));
+    }
+
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ''}`);
+  };
+
+  const handleFiltersChange = (next: ProductFilters) => {
+    setFilters(next);
+    updateUrlFromFilters(next);
+  };
 
   useEffect(() => {
     let aborted = false;
     async function load() {
       try {
         setLoading(true);
-        const res = await fetch('/api/products');
+        const [res, catsRes] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/categories', { cache: 'no-store' })
+        ]);
         if (!res.ok) throw new Error('Failed to load');
         const data = await res.json();
+        if (catsRes.ok) {
+          const catsJson = await catsRes.json();
+          const map: Record<string,string> = {};
+          for (const c of catsJson as Array<{ code: string; nameRu: string }>) map[c.code] = c.nameRu || c.code;
+          setCategoriesMap(map);
+        }
         if (!aborted) setProducts(data || []);
       } catch (e) {
         if (!aborted) setError(e instanceof Error ? e.message : 'Unknown error');
@@ -68,6 +173,14 @@ function ProductsPageInner() {
     load();
     return () => { aborted = true; };
   }, []);
+
+  // Когда подтянули категории, если выбор пуст — выбираем все
+  useEffect(() => {
+    const allCodes = Object.keys(categoriesMap);
+    if (allCodes.length && (!filters.categories || filters.categories.length === 0)) {
+      setFilters(prev => ({ ...prev, categories: allCodes }));
+    }
+  }, [categoriesMap, filters.categories, setFilters]);
 
   const filtered = useMemo(() => applyProductFilters(products, filters), [products, filters]);
 
@@ -139,8 +252,8 @@ function ProductsPageInner() {
           <FilterPanel
             title="Фильтры и поиск"
             filters={filters}
-            onFiltersChange={setFilters}
-            filterConfigs={productFilterConfigs}
+            onFiltersChange={handleFiltersChange}
+            filterConfigs={productFilterConfigs.map(cfg => cfg.key==='categories' ? { ...cfg, options: Object.entries(categoriesMap).map(([value,label])=>({ value, label })) } : cfg)}
             resultsCount={filtered.length}
             totalCount={products.length}
             showFilters={showFilters}
@@ -170,7 +283,7 @@ function ProductsPageInner() {
                             <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/>
                           </svg>
                         </div>
-                        <p className="text-sm font-medium">{categoryNames[product.category as keyof typeof categoryNames]}</p>
+                        <p className="text-sm font-medium">{product.categoryNameRu || product.category}</p>
                       </div>
                     </div>
                   )}
@@ -182,7 +295,7 @@ function ProductsPageInner() {
                       {product.name}
                     </CardTitle>
                     <Badge variant="tertiary" className="flex-shrink-0">
-                      {categoryNames[product.category as keyof typeof categoryNames]}
+                      {product.categoryNameRu || product.category}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -191,22 +304,16 @@ function ProductsPageInner() {
                   <p className="text-sm text-gray-600 mb-4 line-clamp-2">
                     {product.description}
                   </p>
-                  {/* Основные характеристики (reserved space) */}
+                  {/* Пара атрибутов для превью (если есть) */}
                   <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mb-4 min-h-[68px]">
-                    {product.size && (
-                      <div>
-                        <span className="font-medium">Размер:</span>
-                        <br />
-                        <span>{product.size}</span>
-                      </div>
-                    )}
-                    {product.load && (
-                      <div>
-                        <span className="font-medium">Нагрузка:</span>
-                        <br />
-                        <span>{product.load}</span>
-                      </div>
-                    )}
+                    {product.attributes && typeof product.attributes === 'object' &&
+                      Object.entries(product.attributes as Record<string, unknown>).slice(0,2).map(([k,v]) => (
+                        <div key={k}>
+                          <span className="font-medium">{k}:</span>
+                          <br />
+                          <span>{String(v)}</span>
+                        </div>
+                      ))}
                   </div>
                   {/* Цена */}
                   {product.price && (

@@ -17,12 +17,9 @@ export async function GET(req: NextRequest) {
   if (!rl.success) return NextResponse.json({ error: 'Слишком много запросов' }, { status: 429 })
 
   try {
-    // Use raw query to avoid type issues before prisma generate
-    const rows = await prisma.$queryRaw<Array<{ data: unknown }>>`SELECT data FROM "ContentPage" WHERE page = ${type as ContentType}::"ContentPageType" LIMIT 1`
-    const data = rows && rows.length ? rows[0].data : null
-    return NextResponse.json({ type, data })
+    const page = await prisma.contentPage.findUnique({ where: { page: type as ContentType }, select: { data: true } })
+    return NextResponse.json({ type, data: page?.data ?? null })
   } catch {
-    // Table may not exist yet if migration not applied
     return NextResponse.json({ type, data: null })
   }
 }

@@ -9,7 +9,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  // Switched from PostgreSQL to MySQL
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -33,34 +34,63 @@ enum Role {
 model Product {
   id          String   @id @default(cuid())
   name        String
-  description String
-  category    ProductCategory
+  description String?
+  // Связь с категорией (вместо enum)
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id])
   
   // Технические характеристики
-  size        String?  // размер
-  thickness   String?  // толщина
-  weight      String?  // вес
-  load        String?  // нагрузка
-  material    String?  // материал
-  color       String?  // цвет
+  // Доп. произвольные параметры (код -> значение), для новых параметров
+  attributes  Json?
   
   // Дополнительные поля
-  advantages  String[] // преимущества
-  applications String[] // области применения
+  // Stored as JSON arrays for MySQL (no native array type)
+  advantages  Json? // преимущества (array of strings)
+  applications Json? // области применения (array of strings)
   price       Float?   // цена
   isActive    Boolean  @default(true)
   
   // Изображения
-  images      String[] // URLs изображений
+  images      Json? // URLs изображений (array of strings)
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-enum ProductCategory {
-  MANHOLES      // Люки
-  SUPPORT_RINGS // Опорные кольца
-  LADDERS       // Лестницы
+// Категории продуктов с кодом и названием на русском
+model Category {
+  id        String    @id @default(cuid())
+  code      String    @unique // например: MANHOLES, SUPPORT_RINGS, LADDERS
+  nameRu    String    // русское название
+  products  Product[]
+  params    CategoryParam[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Справочник возможных параметров товара
+model Parameter {
+  id        String           @id @default(cuid())
+  code      String           @unique
+  nameRu    String
+  categories CategoryParam[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+// Параметры, назначенные конкретной категории, с флагами
+model CategoryParam {
+  id          String    @id @default(cuid())
+  categoryId  String
+  parameterId String
+  visible     Boolean   @default(true)
+  required    Boolean   @default(false)
+
+  category    Category  @relation(fields: [categoryId], references: [id])
+  parameter   Parameter @relation(fields: [parameterId], references: [id])
+
+  @@unique([categoryId, parameterId])
 }
 
 // Обращения с сайта

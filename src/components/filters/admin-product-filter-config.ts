@@ -13,12 +13,9 @@ export const adminProductFilterConfigs: FilterConfig[] = [
     key: 'categories',
     label: 'Категории',
     type: 'multiselect',
-    options: [
-      { value: 'LADDERS', label: 'Лестницы' },
-      { value: 'MANHOLES', label: 'Люки' },
-      { value: 'SUPPORT_RINGS', label: 'Опорные кольца' }
-    ],
-    defaultValue: ['LADDERS', 'MANHOLES', 'SUPPORT_RINGS']
+  // options are provided dynamically from DB in the page component
+  options: [],
+  defaultValue: []
   },
   {
     key: 'status',

@@ -2,20 +2,19 @@
 
 // URL-адреса проекта
 export const URLS = {
-  main: process.env.NEXTAUTH_URL || "https://mxbox.fun",
-  admin: process.env.ADMIN_URL || "https://admin.mxbox.fun",
+    main: process.env.NEXTAUTH_URL || "https://mxbox.fun",
+    admin: process.env.ADMIN_URL || "https://admin.mxbox.fun",
 } as const;
 
 // Email конфигурация
 export const EMAIL_CONFIG = {
-  smtp: {
-    host: 'smtp.yandex.ru',
-    port: 465,
-    secure: true,
-  },
-  from: {
-    name: "Laddex",
-    address: process.env.YANDEX_EMAIL_USER || "info@laddex.ru",
-  },
-  admin: process.env.ADMIN_EMAIL || "admin@laddex.ru",
+    smtp: {
+        host: "smtp.beget.com",
+        port: 465,
+        secure: true,
+    },
+    from: {
+        name: "Laddex",
+        address: process.env.ADMIN_EMAIL,
+    },
 } as const;

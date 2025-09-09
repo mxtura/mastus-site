@@ -7,18 +7,18 @@ export async function GET() {
   }
 
   const envDebug = {
-    YANDEX_EMAIL_USER: process.env.YANDEX_EMAIL_USER,
-    YANDEX_EMAIL_PASSWORD_LENGTH: process.env.YANDEX_EMAIL_PASSWORD?.length || 0,
-    YANDEX_EMAIL_PASSWORD_FIRST_5: process.env.YANDEX_EMAIL_PASSWORD?.substring(0, 5),
-    YANDEX_EMAIL_PASSWORD_LAST_5: process.env.YANDEX_EMAIL_PASSWORD?.substring(-5),
-    YANDEX_EMAIL_PASSWORD_EQUALS_EXPECTED: process.env.YANDEX_EMAIL_PASSWORD === 'fcuuugwztrlorbgq',
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+    ADMIN_EMAIL_PASSWORD_LENGTH: process.env.ADMIN_EMAIL_PASSWORD?.length || 0,
+    ADMIN_EMAIL_PASSWORD_FIRST_5: process.env.ADMIN_EMAIL_PASSWORD?.substring(0, 5),
+    ADMIN_EMAIL_PASSWORD_LAST_5: process.env.ADMIN_EMAIL_PASSWORD?.substring(-5),
+    ADMIN_EMAIL_PASSWORD_EQUALS_EXPECTED: process.env.ADMIN_EMAIL_PASSWORD === 'fcuuugwztrlorbgq',
     NODE_ENV: process.env.NODE_ENV,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   };
 
   // Генерируем AUTH PLAIN строку для сравнения
-  if (process.env.YANDEX_EMAIL_USER && process.env.YANDEX_EMAIL_PASSWORD) {
-    const authString = `\0${process.env.YANDEX_EMAIL_USER}\0${process.env.YANDEX_EMAIL_PASSWORD}`;
+  if (process.env.ADMIN_EMAIL && process.env.ADMIN_EMAIL_PASSWORD) {
+    const authString = `\0${process.env.ADMIN_EMAIL}\0${process.env.ADMIN_EMAIL_PASSWORD}`;
     const authBase64 = Buffer.from(authString).toString('base64');
     
     return NextResponse.json({

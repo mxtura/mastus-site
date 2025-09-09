@@ -5,36 +5,42 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, Mail } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import type { Product } from "@prisma/client";
 import ProductImage from "@/components/ProductImage";
+
+type ProductWithCategory = Product & { attributes?: unknown, category: { code: string; nameRu: string; params?: { parameter: { code: string; nameRu: string }, visible: boolean }[] } };
+interface NormalizedProduct extends Omit<ProductWithCategory, 'images' | 'advantages' | 'applications'> {
+  images: string[];
+  advantages: string[];
+  applications: string[];
+}
 
 async function getProduct(id: string) {
   try {
-    const product = await prisma.product.findUnique({
-      where: { id, isActive: true }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const product = await (prisma as any).product.findFirst({
+      where: { id, isActive: true },
+      include: { category: { select: { code: true, nameRu: true, params: { include: { parameter: { select: { code: true, nameRu: true } } } } } } },
     });
-    return product;
+    return product as ProductWithCategory | null;
   } catch (error) {
     console.error('Error fetching product:', error);
     return null;
   }
 }
 
-const categoryNames = {
-  MANHOLES: 'Люки',
-  SUPPORT_RINGS: 'Опорные кольца',
-  LADDERS: 'Лестницы'
-};
+// Категория берётся из БД: показываем русское имя, при его отсутствии — код
 
 async function getContactPhoneTel(): Promise<string | null> {
   try {
-    const rows = await prisma.$queryRaw<Array<{ data: unknown }>>`SELECT data FROM "ContentPage" WHERE page = 'CONTACTS'::"ContentPageType" LIMIT 1`;
-    const raw = rows && rows.length ? rows[0].data : null;
-    if (!raw || typeof raw !== 'object') return null;
+    const page = await prisma.contentPage.findUnique({ where: { page: 'CONTACTS' }, select: { data: true } })
+    const raw = page?.data
+    if (!raw || typeof raw !== 'object') return null
     interface CD { phoneTel?: string }
-    const d = raw as CD;
-    return typeof d.phoneTel === 'string' ? d.phoneTel : null;
+    const d = raw as CD
+    return typeof d.phoneTel === 'string' ? d.phoneTel : null
   } catch {
-    return null;
+    return null
   }
 }
 
@@ -46,7 +52,13 @@ interface PageProps {
 
 export default async function ProductPage({ params }: PageProps) {
   const { id } = await params;
-  const product = await getProduct(id);
+  const productRaw = await getProduct(id);
+  const product: NormalizedProduct | null = productRaw ? {
+    ...(productRaw as ProductWithCategory),
+    images: Array.isArray(productRaw.images) ? (productRaw.images as unknown[]).filter(x=>typeof x==='string') as string[] : [],
+    advantages: Array.isArray(productRaw.advantages) ? (productRaw.advantages as unknown[]).filter(x=>typeof x==='string') as string[] : [],
+    applications: Array.isArray(productRaw.applications) ? (productRaw.applications as unknown[]).filter(x=>typeof x==='string') as string[] : [],
+  } : null;
   const phoneTel = await getContactPhoneTel();
 
   if (!product) {
@@ -86,23 +98,22 @@ export default async function ProductPage({ params }: PageProps) {
                         <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/>
                       </svg>
                     </div>
-                    <p className="text-lg font-medium">{categoryNames[product.category as keyof typeof categoryNames]}</p>
+                    <p className="text-lg font-medium">{product.category.nameRu || product.category.code}</p>
                   </div>
                 </div>
               )}
             </div>
-            
             {/* Дополнительные изображения */}
             {product.images && product.images.length > 1 && (
               <div className="grid grid-cols-4 gap-2">
                 {product.images.slice(1).map((image, index) => (
-          <div key={index} className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center p-2">
+                  <div key={index} className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center p-2">
                     <ProductImage
                       src={image}
                       alt={`${product.name} ${index + 2}`}
                       width={150}
                       height={150}
-            className="max-w-full max-h-full object-contain"
+                      className="max-w-full max-h-full object-contain"
                     />
                   </div>
                 ))}
@@ -115,7 +126,7 @@ export default async function ProductPage({ params }: PageProps) {
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <Badge variant="tertiary">
-                  {categoryNames[product.category as keyof typeof categoryNames]}
+                  {product.category.nameRu || product.category.code}
                 </Badge>
                 {product.price && (
                   <span className="text-3xl font-bold text-blue-600">
@@ -131,7 +142,7 @@ export default async function ProductPage({ params }: PageProps) {
               </p>
             </div>
 
-            {/* Технические характеристики */}
+            {/* Характеристики (динамические) */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -140,41 +151,21 @@ export default async function ProductPage({ params }: PageProps) {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {product.size && (
-                    <div className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">Размер:</span>
-                      <span className="text-gray-600">{product.size}</span>
-                    </div>
-                  )}
-                  {product.thickness && (
-                    <div className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">Толщина:</span>
-                      <span className="text-gray-600">{product.thickness}</span>
-                    </div>
-                  )}
-                  {product.weight && (
-                    <div className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">Вес:</span>
-                      <span className="text-gray-600">{product.weight}</span>
-                    </div>
-                  )}
-                  {product.load && (
-                    <div className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">Нагрузка:</span>
-                      <span className="text-gray-600">{product.load}</span>
-                    </div>
-                  )}
-                  {product.material && (
-                    <div className="flex justify-between py-2 border-b border-gray-100 md:col-span-2">
-                      <span className="font-medium text-gray-900">Материал:</span>
-                      <span className="text-gray-600">{product.material}</span>
-                    </div>
-                  )}
-                  {product.color && (
-                    <div className="flex justify-between py-2 border-b border-gray-100 md:col-span-2">
-                      <span className="font-medium text-gray-900">Цвет:</span>
-                      <span className="text-gray-600">{product.color}</span>
-                    </div>
+                  {Boolean(product.attributes && typeof product.attributes === 'object' && product.category.params) && (
+                    Object.entries(product.attributes as Record<string, unknown>)
+                      .filter(([key]) => product.category.params!.some(p => p.parameter.code === key && p.visible))
+                      .map(([key, value]) => {
+                        const cp = product.category.params!.find(p => p.parameter.code === key)
+                        const label = cp?.parameter.nameRu || key
+                        const val = typeof value === 'string' || typeof value === 'number' ? String(value) : Array.isArray(value) ? value.join(', ') : ''
+                        if (!val) return null
+                        return (
+                          <div key={key} className="flex justify-between py-2 border-b border-gray-100 md:col-span-2">
+                            <span className="font-medium text-gray-900">{label}:</span>
+                            <span className="text-gray-600">{val}</span>
+                          </div>
+                        )
+                      })
                   )}
                 </div>
               </CardContent>

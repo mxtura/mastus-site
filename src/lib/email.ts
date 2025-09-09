@@ -15,8 +15,8 @@ const createTransporter = () => {
     port: EMAIL_CONFIG.smtp.port,
     secure: EMAIL_CONFIG.smtp.secure,
     auth: {
-      user: process.env.YANDEX_EMAIL_USER, // ваш email на Яндексе
-      pass: process.env.YANDEX_EMAIL_PASSWORD, // пароль приложения Яндекс
+      user: process.env.ADMIN_EMAIL, // ваш email на Яндексе
+      pass: process.env.ADMIN_EMAIL_PASSWORD, // пароль приложения Яндекс
     },
     debug: true, // включаем отладку
     logger: true, // включаем логирование
@@ -27,11 +27,11 @@ const createTransporter = () => {
   
   // Детальная отладка переменных окружения
   console.log('🔍 Environment Variables Debug:');
-  console.log('YANDEX_EMAIL_USER:', process.env.YANDEX_EMAIL_USER);
-  console.log('YANDEX_EMAIL_PASSWORD first 5 chars:', process.env.YANDEX_EMAIL_PASSWORD?.substring(0, 5));
-  console.log('YANDEX_EMAIL_PASSWORD last 5 chars:', process.env.YANDEX_EMAIL_PASSWORD?.substring(-5));
-  console.log('YANDEX_EMAIL_PASSWORD length:', process.env.YANDEX_EMAIL_PASSWORD?.length);
-  console.log('YANDEX_EMAIL_PASSWORD equals expected:', process.env.YANDEX_EMAIL_PASSWORD === 'fcuuugwztrlorbgq');
+  console.log('ADMIN_EMAIL:', process.env.ADMIN_EMAIL);
+  console.log('ADMIN_EMAIL_PASSWORD first 5 chars:', process.env.ADMIN_EMAIL_PASSWORD?.substring(0, 5));
+  console.log('ADMIN_EMAIL_PASSWORD last 5 chars:', process.env.ADMIN_EMAIL_PASSWORD?.substring(-5));
+  console.log('ADMIN_EMAIL_PASSWORD length:', process.env.ADMIN_EMAIL_PASSWORD?.length);
+  console.log('ADMIN_EMAIL_PASSWORD equals expected:', process.env.ADMIN_EMAIL_PASSWORD === 'fcuuugwztrlorbgq');
   
   // Проверим, что генерируется для AUTH PLAIN
   const authString = `\0${config.auth.user}\0${config.auth.pass}`;

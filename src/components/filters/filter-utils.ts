@@ -9,13 +9,9 @@ export interface Product {
   description: string | null;
   price: number | null;
   category: string;
+  categoryNameRu?: string;
   images: string[];
-  size: string | null;
-  thickness: string | null;
-  weight: string | null;
-  load: string | null;
-  material: string | null;
-  color: string | null;
+  attributes?: Record<string, unknown>;
   advantages: string[];
   applications: string[];
   isActive: boolean;

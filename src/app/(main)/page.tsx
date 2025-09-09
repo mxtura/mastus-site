@@ -1,109 +1,43 @@
-"use client";
-
 import Link from "next/link";
-// Image import removed (handled inside FadingSlideshow)
 import { FadingSlideshow } from "@/components/fading-slideshow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect, useMemo } from "react";
-// Using contact info from DB for tel
+import { getContent, HomeContent, ContactsContent } from '@/lib/content'
+import { prisma } from '@/lib/prisma'
 
-interface ProductPreview {
-  id: string;
-  name: string;
-  category: string;
-  images: string[];
-  price?: number | null;
-  description?: string | null;
-}
-
-export default function Home() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [products, setProducts] = useState<ProductPreview[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
-  const [heroTitle, setHeroTitle] = useState<string>('');
-  const [heroSubtitle, setHeroSubtitle] = useState<string>('');
-  const [phoneTel, setPhoneTel] = useState<string>('');
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
-  useEffect(() => {
-    let aborted = false;
-    async function load() {
-      try {
-        setLoadingProducts(true);
-        const res = await fetch('/api/products', { next: { revalidate: 60 } });
-        if (!res.ok) throw new Error('Failed to load products');
-        const data = await res.json();
-        if (!aborted) {
-          setProducts(Array.isArray(data) ? data : []);
-        }
-  } catch {
-        // Silently ignore for homepage minimal block
-      } finally {
-        if (!aborted) setLoadingProducts(false);
-      }
-    }
-    load();
-    return () => { aborted = true; };
-  }, []);
-
-  // Load editable content
-  useEffect(() => {
-    let ignore = false
-    async function loadContent() {
-      try {
-        const res = await fetch('/api/content?type=HOME', { next: { revalidate: 30 } })
-        if (!res.ok) return
-        const payload = await res.json()
-        if (ignore) return
-        const data = payload?.data || {}
-        if (typeof data.heroTitle === 'string') setHeroTitle(data.heroTitle)
-        if (typeof data.heroSubtitle === 'string') setHeroSubtitle(data.heroSubtitle)
-      } catch {}
-    }
-    loadContent()
-    return () => { ignore = true }
-  }, [])
-
-  // Load contact phone for CTA
-  useEffect(() => {
-    let ignore = false
-    async function loadContact() {
-      try {
-        const res = await fetch('/api/content?type=CONTACTS', { next: { revalidate: 60 } })
-        if (!res.ok) return
-        const payload = await res.json()
-        if (ignore) return
-        const data = payload?.data || {}
-        if (typeof data.phoneTel === 'string') setPhoneTel(data.phoneTel)
-      } catch {}
-    }
-    loadContact()
-    return () => { ignore = true }
-  }, [])
-
-  const ladderImages = useMemo(() => {
-    return products
-      .filter(p => p.category === 'LADDERS' && p.images && p.images.length)
-      .flatMap(p => p.images.slice(0,2)) // up to 2 per product
-      .filter(Boolean)
-      .slice(0, 8)
-      .map((src: string, idx: number) => ({ src, alt: `Лестницы ${idx+1}` }));
-  }, [products]);
-
-  const polymerImages = useMemo(() => {
-    return products
-      .filter(p => (p.category === 'MANHOLES' || p.category === 'SUPPORT_RINGS') && p.images && p.images.length)
-      .flatMap(p => p.images.slice(0,2))
-      .filter(Boolean)
-      .slice(0, 8)
-      .map((src: string, idx: number) => ({ src, alt: `Полимер-песчаные изделия ${idx+1}` }));
-  }, [products]);
-
+export default async function Home() {
+  const [home, contacts] = await Promise.all([
+    getContent('HOME'),
+    getContent('CONTACTS')
+  ])
+  // Fetch a few products (server side) for slideshows
+  const products = await prisma.product.findMany({
+    select: { id: true, category: { select: { code: true } }, images: true },
+    take: 12,
+    orderBy: { createdAt: 'desc' }
+  })
+  // Normalize JSON -> string[]
+  const toArray = (val: unknown): string[] => Array.isArray(val) ? val.filter(v => typeof v === 'string') as string[] : []
+  const ladderImages = products
+    .map(p => ({ ...p, images: toArray(p.images as unknown) }))
+    .filter(p => p.category?.code === 'LADDERS' && p.images.length > 0)
+    .flatMap(p => p.images.slice(0,2))
+    .filter(Boolean)
+    .slice(0,8)
+    .map((src: string, idx: number) => ({ src, alt: `Лестницы ${idx+1}` }))
+  const polymerImages = products
+    .map(p => ({ ...p, images: toArray(p.images as unknown) }))
+    .filter(p => (p.category?.code === 'MANHOLES' || p.category?.code === 'SUPPORT_RINGS') && p.images.length > 0)
+    .flatMap(p => p.images.slice(0,2))
+    .filter(Boolean)
+    .slice(0,8)
+    .map((src: string, idx: number) => ({ src, alt: `Полимер-песчаные изделия ${idx+1}` }))
+  const hero = home as HomeContent
+  const contactsData = contacts as ContactsContent
+  const phoneTel = contactsData.phoneTel
+  const heroTitle = hero.heroTitle
+  const heroSubtitle = hero.heroSubtitle
   return (
     <div className="min-h-screen">
       {/* Hero Section (industrial style) */}
@@ -117,7 +51,7 @@ export default function Home() {
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={`text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className="text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[var(--primary)] to-[var(--primary)] bg-clip-text text-transparent heading tracking-wide">
               {heroTitle}
             </h1>
@@ -150,7 +84,7 @@ export default function Home() {
                     className="h-full w-full"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs text-neutral-400 tracking-wide">{loadingProducts ? 'Загрузка...' : 'Нет изображений'}</div>
+                  <div className="w-full h-full flex items-center justify-center text-xs text-neutral-400 tracking-wide">Нет изображений</div>
                 )}
                 <div className="absolute top-0 left-0 h-1 w-full bg-[var(--tertiary)]" />
                 <div className="absolute bottom-2 left-2">
@@ -182,7 +116,7 @@ export default function Home() {
                     className="h-full w-full"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs text-neutral-400 tracking-wide">{loadingProducts ? 'Загрузка...' : 'Нет изображений'}</div>
+                  <div className="w-full h-full flex items-center justify-center text-xs text-neutral-400 tracking-wide">Нет изображений</div>
                 )}
                 <div className="absolute top-0 left-0 h-1 w-full bg-[var(--tertiary)]" />
                 <div className="absolute bottom-2 left-2">
