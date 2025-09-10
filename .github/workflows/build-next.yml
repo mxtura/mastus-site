@@ -1,0 +1,57 @@
+name: build-next
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Prisma Client is generated automatically on first import, but we do it explicitly for clarity
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        # If your build requires a real DB connection (it shouldn't for force-dynamic pages),
+        # you can provide DATABASE_URL via secrets here.
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build (Next.js standalone)
+        run: npm run build
+        env:
+          NODE_ENV: production
+          # Provide real secret in repo settings if needed at build time
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL}}
+
+      - name: Upload artifact (standalone bundle)
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-standalone
+          path: |
+            .next/standalone
+            .next/static
+            public
+            prisma/schema.prisma
+          retention-days: 7
+
+      - name: Summary
+        run: |
+          echo "Артефакт next-standalone загружен. Содержит standalone сервер, static и public." >> $GITHUB_STEP_SUMMARY
+          echo "Далее: скачайте артефакт из раздела Actions и разверните на сервере." >> $GITHUB_STEP_SUMMARY
