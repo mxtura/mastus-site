@@ -27,8 +27,14 @@ const defaultContacts: ContactsContent = {
 const defaultAbout: AboutContent = { intro: '', companyText: '' }
 
 async function raw(page: ContentPageType): Promise<unknown> {
-  const row = await prisma.contentPage.findUnique({ where: { page }, select: { data: true } })
-  return row?.data ?? null
+  try {
+    const row = await prisma.contentPage.findUnique({ where: { page }, select: { data: true } })
+    return row?.data ?? null
+  } catch {
+    // База недоступна или переменные не заданы — возвращаем null,
+    // нормализатор подставит дефолтные значения.
+    return null
+  }
 }
 
 function normalize(page: ContentPageType, data: unknown) {
