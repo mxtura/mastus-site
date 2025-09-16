@@ -1,3 +1,4 @@
+//export const dynamic = 'force-dynamic'
 import Link from "next/link";
 import { FadingSlideshow } from "@/components/fading-slideshow";
 import { Button } from "@/components/ui/button";
@@ -5,11 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { getContent, HomeContent, ContactsContent } from '@/lib/content'
 import { prisma } from '@/lib/prisma'
-
-// В CI/на этапе build не должен быть доступ к БД.
-// Помечаем страницу как динамическую, чтобы Next не пререндерил её при сборке.
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 export default async function Home() {
   const [home, contacts] = await Promise.all([
