@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
-import { Eye, Mail, Phone, Building, Calendar, Trash2, MessageSquare } from 'lucide-react'
+import { Eye, Mail, Phone, Building, Calendar, Trash2, MessageSquare, ArchiveRestore, Archive } from 'lucide-react'
 import { FilterPanel } from '@/components/ui/FilterPanel'
 import { messageFilterConfigs, MessageFilters, initialMessageFilters } from '@/components/filters/message-filter-config'
 import { applyMessageFilters, ContactMessage } from '@/components/filters/filter-utils'
@@ -51,6 +51,7 @@ export default function MessagesPage() {
   
   // Состояние фильтров
   const [filters, setFilters] = useState<MessageFilters>(initialMessageFilters)
+  const [viewArchived, setViewArchived] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
@@ -80,9 +81,11 @@ export default function MessagesPage() {
 
   // Функция фильтрации сообщений
   const applyFilters = useCallback((messagesToFilter: ContactMessage[]) => {
-    const filtered = applyMessageFilters(messagesToFilter, filters);
+    const filteredBase = applyMessageFilters(messagesToFilter, filters);
+    // Разделяем архив/неархив
+    const filtered = filteredBase.filter(m => viewArchived ? m.status === 'ARCHIVED' : m.status !== 'ARCHIVED')
     setFilteredMessages(filtered);
-  }, [filters])
+  }, [filters, viewArchived])
 
   // Применяем фильтры при изменении сообщений или фильтров
   useEffect(() => {
@@ -112,36 +115,41 @@ export default function MessagesPage() {
     }
   }
 
-  const handleStatusChange = async (messageId: string, newStatus: ContactMessage['status']) => {
+  const archiveMessage = async (messageId: string) => {
     try {
       const response = await fetch(`/api/messages/${messageId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: 'ARCHIVED' })
       })
-
       if (response.ok) {
-        setMessages(prev => prev.map(m => 
-          m.id === messageId ? { ...m, status: newStatus } : m
-        ))
-        if (selectedMessage?.id === messageId) {
-          setSelectedMessage(prev => prev ? { ...prev, status: newStatus } : null)
-        }
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, status: 'ARCHIVED' } : m))
       }
-    } catch (error) {
-      console.error('Ошибка изменения статуса:', error)
-    }
+    } catch (e) { console.error(e) }
+  }
+
+  const unarchiveMessage = async (messageId: string) => {
+    try {
+      const response = await fetch(`/api/messages/${messageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'NEW' })
+      })
+      if (response.ok) {
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, status: 'NEW' } : m))
+      }
+    } catch (e) { console.error(e) }
   }
 
   const handleDeleteMessage = async (messageId: string) => {
-    if (!confirm('Вы уверены, что хотите удалить это сообщение?')) return
+    if (!confirm('Удалить навсегда? (только архивные можно удалять)')) return
 
     try {
       const response = await fetch(`/api/messages/${messageId}`, {
         method: 'DELETE'
       })
 
-      if (response.ok) {
+  if (response.ok) {
         setMessages(prev => prev.filter(m => m.id !== messageId))
         if (selectedMessage?.id === messageId) {
           setSelectedMessage(null)
@@ -237,35 +245,56 @@ export default function MessagesPage() {
         resultsCount={filteredMessages.length}
         totalCount={messages.length}
         showFilters={showFilters}
-  onToggleFilters={() => setShowFilters(!showFilters)}
-  className="mb-6"
+        onToggleFilters={() => setShowFilters(!showFilters)}
+        className="mb-6"
       />
 
-      <div className="space-y-4">
+      {/* Переключатель Архив/Неархив */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="inline-flex border border-gray-200">
+          <button
+            className={`px-3 py-2 text-sm ${!viewArchived ? 'bg-gray-900 text-white' : 'bg-white text-gray-700'}`}
+            onClick={() => setViewArchived(false)}
+          >Неархивированные</button>
+          <button
+            className={`px-3 py-2 text-sm ${viewArchived ? 'bg-gray-900 text-white' : 'bg-white text-gray-700'}`}
+            onClick={() => setViewArchived(true)}
+          >Архивированные</button>
+        </div>
+
+        {viewArchived && filteredMessages.length > 0 && (
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              if (!confirm('Удалить ВСЕ архивные сообщения?')) return
+              const res = await fetch('/api/messages?mode=purgeArchived', { method: 'DELETE' })
+              if (res.ok) {
+                setMessages(prev => prev.filter(m => m.status !== 'ARCHIVED'))
+              }
+            }}
+          >Удалить все архивные</Button>
+        )}
+      </div>
+
+      {/* Сетка квадратов 3 колонки */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredMessages.map((message) => (
-          <Card key={message.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg">{message.name}</CardTitle>
-                    <Badge className={statusColors[message.status]}>
-                      {statusLabels[message.status]}
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    {message.subject ? subjectLabels[message.subject as keyof typeof subjectLabels] || message.subject : 'Без темы'}
-                  </CardDescription>
-                </div>
-                <div className="text-sm text-gray-500 flex items-center gap-1">
+          <Card key={message.id} className="hover:shadow-lg transition-shadow aspect-square flex flex-col">
+            <CardHeader className="pb-2">
+              <div className="space-y-1">
+                <CardTitle className="text-lg">{message.name}</CardTitle>
+                <CardDescription>
+                  {message.subject ? subjectLabels[message.subject as keyof typeof subjectLabels] || message.subject : 'Без темы'}
+                </CardDescription>
+                <div className="text-sm text-gray-600 mt-2 font-medium flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
                   {new Date(message.createdAt).toLocaleString('ru-RU')}
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <CardContent className="flex-1 flex flex-col">
+              <div className="flex-1">
+                <div className="space-y-1 text-sm">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-400" />
                     <a href={`mailto:${message.email}`} className="text-blue-600 hover:underline">
@@ -287,42 +316,44 @@ export default function MessagesPage() {
                     </div>
                   )}
                 </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm whitespace-pre-wrap">{message.message.slice(0, 200)}{message.message.length > 200 ? '...' : ''}</p>
-                </div>
+              </div>
 
-                <div className="flex gap-2 justify-between items-center">
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleViewMessage(message)}>
-                      <Eye className="w-4 h-4 mr-2" />
-                      Просмотреть
+              <div className="bg-gray-50 p-3 rounded border mt-3 h-20 overflow-hidden">
+                <p className="text-sm whitespace-pre-wrap">{message.message.slice(0, 90)}{message.message.length > 70 ? '...' : ''}</p>
+              </div>
+
+              <div className="flex items-center pt-3">
+                <div className="shrink-0">
+                  <Button size="sm" variant="outline" onClick={() => handleViewMessage(message)}>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Просмотр
+                  </Button>
+                </div>
+                <div className="flex-1 flex justify-center">
+                  <Badge className={statusColors[message.status]}>
+                    {statusLabels[message.status]}
+                  </Badge>
+                </div>
+                <div className="shrink-0 inline-flex items-center gap-2">
+                  {message.status === 'ARCHIVED' ? (
+                    <>
+                      <Button size="sm" variant="secondary" onClick={() => unarchiveMessage(message.id)}>
+                        <ArchiveRestore className="w-4 h-4 mr-1" /> Вернуть
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive" 
+                        onClick={() => handleDeleteMessage(message.id)}
+                        title="Удалить сообщение"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button size="sm" variant="secondary" onClick={() => archiveMessage(message.id)}>
+                      <Archive className="w-4 h-4 mr-1" /> Архив
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleReply(message)}>
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Ответить
-                    </Button>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <select 
-                      value={message.status} 
-                      onChange={(e) => handleStatusChange(message.id, e.target.value as ContactMessage['status'])}
-                      className="text-xs border rounded px-2 py-1"
-                    >
-                      <option value="NEW">Новое</option>
-                      <option value="PROCESSING">В обработке</option>
-                      <option value="COMPLETED">Обработано</option>
-                      <option value="ARCHIVED">Архив</option>
-                    </select>
-                    <Button 
-                      size="sm" 
-                      variant="destructive" 
-                      onClick={() => handleDeleteMessage(message.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  )}
                 </div>
               </div>
             </CardContent>

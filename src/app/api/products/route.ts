@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         description: true,
+  sku: true,
         price: true,
   attributes: true,
         images: true,
@@ -105,6 +106,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // SKU (артикул) — опционально, но если задан, должен быть уникален и не длиннее 64 символов
+    const skuRaw: unknown = data.sku
+    const sku = typeof skuRaw === 'string' ? skuRaw.trim() : (skuRaw == null ? null : String(skuRaw).trim())
+    if (sku && sku.length > 64) {
+      return NextResponse.json({ error: 'Артикул слишком длинный (макс. 64)' }, { status: 400 })
+    }
+    if (sku && sku !== '') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existing = await (prisma as any).product.findUnique({ where: { sku } })
+      if (existing) {
+        return NextResponse.json({ error: 'Артикул уже используется' }, { status: 409 })
+      }
+    }
+
     // Найдём категорию по коду
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const category = await (prisma as any).category.findUnique({ where: { code: data.category } })
@@ -117,6 +132,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: data.name.trim(),
         description: data.description?.trim() || null,
+  sku: sku && sku !== '' ? sku : null,
         price: data.price ? parseFloat(data.price) : null,
   categoryId: category.id,
         images: Array.isArray(data.images) ? data.images.slice(0,20) : [],

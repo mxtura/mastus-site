@@ -10,9 +10,9 @@ generator client {
 }
 
 datasource db {
-  // Switched from PostgreSQL to MySQL
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 // Пользователи (администраторы)
@@ -36,6 +36,8 @@ model Product {
   id          String   @id @default(cuid())
   name        String
   description String?
+  // Артикул (SKU) вручную задаваемый. Уникален, но может быть пустым.
+  sku         String?  @unique
   // Связь с категорией (вместо enum)
   categoryId  String
   category    Category  @relation(fields: [categoryId], references: [id])

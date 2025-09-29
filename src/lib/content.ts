@@ -8,7 +8,17 @@ export type ContentPageType = 'HOME' | 'CONTACTS' | 'ABOUT'
 export interface HomeContent { heroTitle: string; heroSubtitle: string }
 export interface ContactsContent {
   intro: string
-  requisites: string
+  requisites: {
+    companyName: string
+    inn: string
+    kpp: string
+    ogrn: string
+    bankName: string
+    bik: string
+    settlementAccount: string
+    correspondentAccount: string
+    legalAddress: string
+  }
   phoneTel: string
   emailInfo: string
   emailSales: string
@@ -22,7 +32,11 @@ export interface AboutContent { intro: string; companyText: string }
 // Defaults
 const defaultHome: HomeContent = { heroTitle: 'Laddex', heroSubtitle: '' }
 const defaultContacts: ContactsContent = {
-  intro: '', requisites: '', phoneTel: '', emailInfo: '', emailSales: '', addressCityRegion: '', addressStreet: '', whatsappNumber: '', telegramUsername: ''
+  intro: '',
+  requisites: {
+    companyName: '', inn: '', kpp: '', ogrn: '', bankName: '', bik: '', settlementAccount: '', correspondentAccount: '', legalAddress: ''
+  },
+  phoneTel: '', emailInfo: '', emailSales: '', addressCityRegion: '', addressStreet: '', whatsappNumber: '', telegramUsername: ''
 }
 const defaultAbout: AboutContent = { intro: '', companyText: '' }
 

@@ -7,6 +7,7 @@ export interface Product {
   id: string;
   name: string;
   description: string | null;
+  sku?: string | null;
   price: number | null;
   category: string;
   categoryNameRu?: string;
@@ -40,7 +41,8 @@ export function applyProductFilters(products: Product[], filters: ProductFilters
     const searchLower = filters.searchText.toLowerCase();
     filtered = filtered.filter(product =>
       product.name.toLowerCase().includes(searchLower) ||
-      (product.description && product.description.toLowerCase().includes(searchLower))
+  (product.description && product.description.toLowerCase().includes(searchLower)) ||
+  (product.sku && product.sku.toLowerCase().includes(searchLower))
     );
   }
 
@@ -150,7 +152,8 @@ export function applyAdminProductFilters(products: Product[], filters: AdminProd
     const searchLower = filters.searchText.toLowerCase();
     filtered = filtered.filter(product =>
       product.name.toLowerCase().includes(searchLower) ||
-      (product.description && product.description.toLowerCase().includes(searchLower))
+  (product.description && product.description.toLowerCase().includes(searchLower)) ||
+  (product.sku && product.sku.toLowerCase().includes(searchLower))
     );
   }
 

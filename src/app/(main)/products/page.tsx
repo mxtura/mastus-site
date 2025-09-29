@@ -304,6 +304,11 @@ function ProductsPageInner() {
                   <p className="text-sm text-gray-600 mb-4 line-clamp-2">
                     {product.description}
                   </p>
+                  {product.sku && (
+                    <p className="text-xs text-gray-500 mb-2">
+                      Артикул: <span className="font-medium">{product.sku}</span>
+                    </p>
+                  )}
                   {/* Пара атрибутов для превью (если есть) */}
                   <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mb-4 min-h-[68px]">
                     {product.attributes && typeof product.attributes === 'object' &&

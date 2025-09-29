@@ -96,9 +96,15 @@ export async function DELETE(
     }
 
     const params = await context.params
-    await prisma.contactMessage.delete({
-      where: { id: params.id }
-    })
+    // Разрешаем полное удаление только для архивных сообщений
+    const msg = await prisma.contactMessage.findUnique({ where: { id: params.id }, select: { status: true } })
+    if (!msg) {
+      return NextResponse.json({ error: 'Сообщение не найдено' }, { status: 404 })
+    }
+    if (msg.status !== 'ARCHIVED') {
+      return NextResponse.json({ error: 'Удаление доступно только для архивных сообщений' }, { status: 400 })
+    }
+    await prisma.contactMessage.delete({ where: { id: params.id } })
     
     return NextResponse.json({ success: true })
   } catch (error) {

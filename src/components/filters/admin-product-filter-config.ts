@@ -6,7 +6,7 @@ export const adminProductFilterConfigs: FilterConfig[] = [
     key: 'searchText',
     label: 'Поиск',
     type: 'search',
-    placeholder: 'Поиск по названию, описанию...',
+  placeholder: 'Поиск по названию, артикулу, описанию...',
     defaultValue: ''
   },
   {

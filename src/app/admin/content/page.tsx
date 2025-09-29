@@ -13,7 +13,17 @@ type ContentType = 'HOME' | 'CONTACTS' | 'ABOUT'
 type HomeData = { heroTitle?: string; heroSubtitle?: string }
 type ContactsData = {
   intro?: string
-  requisites?: string
+  requisites?: {
+    companyName?: string
+    inn?: string
+    kpp?: string
+    ogrn?: string
+    bankName?: string
+    bik?: string
+    settlementAccount?: string
+    correspondentAccount?: string
+    legalAddress?: string
+  }
   phoneTel?: string
   emailInfo?: string
   emailSales?: string
@@ -39,7 +49,9 @@ export default function ContentAdminPage() {
   const [home, setHome] = useState({ heroTitle: '', heroSubtitle: '' })
   const [contacts, setContacts] = useState<Required<ContactsData>>({
     intro: '',
-    requisites: '',
+    requisites: {
+      companyName: '', inn: '', kpp: '', ogrn: '', bankName: '', bik: '', settlementAccount: '', correspondentAccount: '', legalAddress: ''
+    },
     phoneTel: '',
     emailInfo: '',
     emailSales: '',
@@ -77,7 +89,17 @@ export default function ContentAdminPage() {
             const d = rec.data as ContactsData
             setContacts({
               intro: d?.intro || '',
-              requisites: d?.requisites || '',
+              requisites: {
+                companyName: d?.requisites?.companyName || '',
+                inn: d?.requisites?.inn || '',
+                kpp: d?.requisites?.kpp || '',
+                ogrn: d?.requisites?.ogrn || '',
+                bankName: d?.requisites?.bankName || '',
+                bik: d?.requisites?.bik || '',
+                settlementAccount: d?.requisites?.settlementAccount || '',
+                correspondentAccount: d?.requisites?.correspondentAccount || '',
+                legalAddress: d?.requisites?.legalAddress || '',
+              },
               phoneTel: d?.phoneTel || '',
               emailInfo: d?.emailInfo || '',
               emailSales: d?.emailSales || '',
@@ -165,8 +187,45 @@ export default function ContentAdminPage() {
               <Textarea rows={3} value={contacts.intro} onChange={e=>setContacts(v=>({...v, intro: e.target.value}))} />
             </div>
             <div>
-              <label className="block text-sm mb-1">Реквизиты (свободный текст)</label>
-              <Textarea rows={6} value={contacts.requisites} onChange={e=>setContacts(v=>({...v, requisites: e.target.value}))} />
+              <label className="block text-sm mb-2 font-medium">Реквизиты</label>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs mb-1">Наименование компании</label>
+                  <Input value={contacts.requisites.companyName} onChange={e=>setContacts(v=>({...v, requisites: {...v.requisites, companyName: e.target.value}}))} />
+                </div>
+                <div>
+                  <label className="block text-xs mb-1">ИНН</label>
+                  <Input value={contacts.requisites.inn} onChange={e=>setContacts(v=>({...v, requisites: {...v.requisites, inn: e.target.value}}))} />
+                </div>
+                <div>
+                  <label className="block text-xs mb-1">КПП</label>
+                  <Input value={contacts.requisites.kpp} onChange={e=>setContacts(v=>({...v, requisites: {...v.requisites, kpp: e.target.value}}))} />
+                </div>
+                <div>
+                  <label className="block text-xs mb-1">ОГРН</label>
+                  <Input value={contacts.requisites.ogrn} onChange={e=>setContacts(v=>({...v, requisites: {...v.requisites, ogrn: e.target.value}}))} />
+                </div>
+                <div>
+                  <label className="block text-xs mb-1">Банк</label>
+                  <Input value={contacts.requisites.bankName} onChange={e=>setContacts(v=>({...v, requisites: {...v.requisites, bankName: e.target.value}}))} />
+                </div>
+                <div>
+                  <label className="block text-xs mb-1">БИК</label>
+                  <Input value={contacts.requisites.bik} onChange={e=>setContacts(v=>({...v, requisites: {...v.requisites, bik: e.target.value}}))} />
+                </div>
+                <div>
+                  <label className="block text-xs mb-1">Р/с</label>
+                  <Input value={contacts.requisites.settlementAccount} onChange={e=>setContacts(v=>({...v, requisites: {...v.requisites, settlementAccount: e.target.value}}))} />
+                </div>
+                <div>
+                  <label className="block text-xs mb-1">К/с</label>
+                  <Input value={contacts.requisites.correspondentAccount} onChange={e=>setContacts(v=>({...v, requisites: {...v.requisites, correspondentAccount: e.target.value}}))} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs mb-1">Юридический адрес</label>
+                  <Input value={contacts.requisites.legalAddress} onChange={e=>setContacts(v=>({...v, requisites: {...v.requisites, legalAddress: e.target.value}}))} />
+                </div>
+              </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>

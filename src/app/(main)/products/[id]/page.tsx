@@ -10,6 +10,7 @@ import ProductImage from "@/components/ProductImage";
 
 type ProductWithCategory = Product & { attributes?: unknown, category: { code: string; nameRu: string; params?: { parameter: { code: string; nameRu: string }, visible: boolean }[] } };
 interface NormalizedProduct extends Omit<ProductWithCategory, 'images' | 'advantages' | 'applications'> {
+  sku?: string | null;
   images: string[];
   advantages: string[];
   applications: string[];
@@ -137,6 +138,9 @@ export default async function ProductPage({ params }: PageProps) {
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
                 {product.name}
               </h1>
+              {product.sku && (
+                <p className="text-sm text-gray-500 mb-2">Артикул: <span className="font-medium">{product.sku}</span></p>
+              )}
               <p className="text-lg text-gray-600 leading-relaxed">
                 {product.description}
               </p>

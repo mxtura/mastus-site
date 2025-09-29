@@ -32,6 +32,7 @@ export async function GET() {
         id: true,
         name: true,
         description: true,
+  sku: true,
         price: true,
         isActive: true,
         createdAt: true,

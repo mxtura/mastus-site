@@ -22,6 +22,7 @@ interface Product {
   id: string
   name: string
   description: string | null
+  sku?: string | null
   price: number | null
   category: string
   isActive: boolean
@@ -90,7 +91,7 @@ function AdminProductsPageInner() {
     ))
   })()
 
-  const emptyForm = { name: '', description: '', price: '', category: 'LADDERS', isActive: true, images: '', attributes: {} as Record<string, unknown>, advantages: '', applications: '' }
+  const emptyForm = { name: '', description: '', sku: '', price: '', category: 'LADDERS', isActive: true, images: '', attributes: {} as Record<string, unknown>, advantages: '', applications: '' }
   const [formData, setFormData] = useState({ ...emptyForm })
 
   // Применяем фильтры к продуктам
@@ -231,7 +232,7 @@ function AdminProductsPageInner() {
   }
 
   const startCreate = () => { setFormData({ ...emptyForm }); setEditingId(null); setIsDialogOpen(true) }
-  const startEdit = (p: Product) => { setFormError(''); setFormData({ name: p.name, description: p.description || '', price: p.price?.toString() || '', category: p.category, isActive: p.isActive, images: (p.images||[]).join('\n'), attributes: (p.attributes as Record<string, unknown>) || {}, advantages: (p.advantages||[]).join('\n'), applications: (p.applications||[]).join('\n') }); setEditingId(p.id); setIsDialogOpen(true) }
+  const startEdit = (p: Product) => { setFormError(''); setFormData({ name: p.name, description: p.description || '', sku: p.sku || '', price: p.price?.toString() || '', category: p.category, isActive: p.isActive, images: (p.images||[]).join('\n'), attributes: (p.attributes as Record<string, unknown>) || {}, advantages: (p.advantages||[]).join('\n'), applications: (p.applications||[]).join('\n') }); setEditingId(p.id); setIsDialogOpen(true) }
   const handleDelete = async (id: string) => { if (!confirm('Удалить продукт?')) return; try { const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' }); if (res.ok) fetchProducts() } catch(e){ console.error(e) } }
 
   const handleImageUpload = async (file: File) => {
@@ -268,7 +269,7 @@ function AdminProductsPageInner() {
         const v = (attrs ?? {})[p.parameter.code]
         if (v !== undefined && String(v).trim() !== '') cleanedAttrs[p.parameter.code] = v
       }
-      const payload = { name: formData.name.trim(), description: formData.description.trim() || null, price: formData.price ? parseFloat(formData.price) : null, category: formData.category, isActive: formData.isActive, images: formData.images.split('\n').map(s=>s.trim()).filter(Boolean), attributes: cleanedAttrs, advantages: formData.advantages.split('\n').map(s=>s.trim()).filter(Boolean), applications: formData.applications.split('\n').map(s=>s.trim()).filter(Boolean) }
+  const payload = { name: formData.name.trim(), description: formData.description.trim() || null, sku: formData.sku?.trim() || null, price: formData.price ? parseFloat(formData.price) : null, category: formData.category, isActive: formData.isActive, images: formData.images.split('\n').map(s=>s.trim()).filter(Boolean), attributes: cleanedAttrs, advantages: formData.advantages.split('\n').map(s=>s.trim()).filter(Boolean), applications: formData.applications.split('\n').map(s=>s.trim()).filter(Boolean) }
       const res = await fetch(editingId ? `/api/admin/products/${editingId}` : '/api/products', { method: editingId ? 'PATCH':'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
       if (res.ok) { setIsDialogOpen(false); setFormData({ ...emptyForm }); setEditingId(null); fetchProducts() }
     } catch(err){ console.error('Ошибка сохранения продукта', err) } finally { setSubmitting(false) }
@@ -305,7 +306,11 @@ function AdminProductsPageInner() {
                   <Label htmlFor="description">Описание</Label>
                   <Textarea id="description" rows={3} value={formData.description} onChange={e=>setFormData({...formData,description:e.target.value})} />
                 </div>
-                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="sku">Артикул (SKU)</Label>
+                      <Input id="sku" value={formData.sku} onChange={e=>setFormData({...formData,sku:e.target.value})} placeholder="Напр.: MST-001" />
+                    </div>
                   <div className="grid gap-2">
                     <Label htmlFor="price">Цена</Label>
                     <Input id="price" type="number" step="0.01" value={formData.price} onChange={e=>setFormData({...formData,price:e.target.value})} placeholder="Пусто = по запросу" />
@@ -432,6 +437,7 @@ function AdminProductsPageInner() {
             <CardContent>
               <div className="space-y-4">
                 {p.description && <p className="text-sm text-gray-600 leading-relaxed">{p.description.length>140 ? p.description.slice(0,140)+'…' : p.description}</p>}
+                {p.sku && <p className="text-xs text-gray-500"><span className="font-medium">Артикул:</span> {p.sku}</p>}
                 <div className="flex flex-wrap gap-2 text-[11px] text-gray-500">
                   {p.attributes && typeof p.attributes === 'object' && Object.entries(p.attributes as Record<string, unknown>).slice(0,4).map(([k,v])=> (
                     <span key={k}>{k}: {String(v)}</span>

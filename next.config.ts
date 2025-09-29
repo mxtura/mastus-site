@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   
+  
   // Для создания standalone версии (нужно для Docker)
   output: 'standalone',
   

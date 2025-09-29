@@ -16,8 +16,11 @@ interface FormData {
 }
 
 export default function Contacts() {
+  type Requisites = { companyName: string; inn: string; kpp: string; ogrn: string; bankName: string; bik: string; settlementAccount: string; correspondentAccount: string; legalAddress: string }
   const [intro, setIntro] = useState<string>('')
-  const [requisites, setRequisites] = useState<string>('')
+  const [requisites, setRequisites] = useState<Requisites>({
+    companyName: '', inn: '', kpp: '', ogrn: '', bankName: '', bik: '', settlementAccount: '', correspondentAccount: '', legalAddress: ''
+  })
   const [contact, setContact] = useState<{ phoneTel: string; emailInfo: string; emailSales: string; addressCityRegion: string; addressStreet: string }>({
     phoneTel: '', emailInfo: '', emailSales: '', addressCityRegion: '', addressStreet: ''
   })
@@ -33,6 +36,7 @@ export default function Contacts() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   useEffect(() => {
     let ignore = false
@@ -44,7 +48,20 @@ export default function Contacts() {
         if (ignore) return
         const data = payload?.data || {}
         if (typeof data.intro === 'string') setIntro(data.intro)
-        if (typeof data.requisites === 'string') setRequisites(data.requisites)
+        if (data.requisites && typeof data.requisites === 'object') {
+          const r = data.requisites as Partial<Requisites>
+          setRequisites({
+            companyName: r.companyName ?? '',
+            inn: r.inn ?? '',
+            kpp: r.kpp ?? '',
+            ogrn: r.ogrn ?? '',
+            bankName: r.bankName ?? '',
+            bik: r.bik ?? '',
+            settlementAccount: r.settlementAccount ?? '',
+            correspondentAccount: r.correspondentAccount ?? '',
+            legalAddress: r.legalAddress ?? '',
+          })
+        }
         setContact({
           phoneTel: typeof data.phoneTel === 'string' ? data.phoneTel : '',
           emailInfo: typeof data.emailInfo === 'string' ? data.emailInfo : '',
@@ -67,18 +84,34 @@ export default function Contacts() {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+  // Сбрасываем сообщения валидации при изменении полей
+  if (validationErrors.length) setValidationErrors([]);
+  if (submitMessage) setSubmitMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Кастомная проверка обязательных полей
+    const errors: string[] = [];
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.name.trim()) errors.push('Укажите имя.');
+    if (!formData.email.trim() || !emailRegex.test(formData.email.trim())) errors.push('Укажите корректный email.');
+    if (!formData.subject) errors.push('Выберите тему обращения.');
+    if (!formData.message.trim()) errors.push('Введите сообщение.');
+    if (errors.length) {
+      setValidationErrors(errors);
+      return;
+    }
     
     if (!formData.consent) {
-      setSubmitMessage({ type: 'error', text: 'Необходимо согласие на обработку персональных данных' });
+      setValidationErrors(['Необходимо согласие на обработку персональных данных.']);
       return;
     }
 
     setIsSubmitting(true);
     setSubmitMessage(null);
+    setValidationErrors([]);
 
     try {
       const response = await fetch('/api/messages', {
@@ -145,7 +178,7 @@ export default function Contacts() {
           <div className="space-y-8">
             <Card className="p-10 border-neutral-300 bg-neutral-50 rounded-none">
               <CardHeader className="px-0 pt-0">
-                <CardTitle className="text-2xl font-semibold tracking-wide heading mb-6">ООО ФИРМА &quot;МАСТУС&quot;</CardTitle>
+                <CardTitle className="text-2xl font-semibold tracking-wide heading mb-6">Laddex</CardTitle>
               </CardHeader>
               <CardContent className="px-0">
                 <div className="space-y-6">
@@ -210,8 +243,20 @@ export default function Contacts() {
         <CardTitle className="text-xl font-semibold tracking-wide text-neutral-900 mb-4">РЕКВИЗИТЫ КОМПАНИИ</CardTitle>
               </CardHeader>
               <CardContent className="px-0">
-  <div className="space-y-3 text-sm text-neutral-700 whitespace-pre-line">
-                  {requisites || '—'}
+  <div className="space-y-3 text-sm text-neutral-700">
+                  <div><span className="font-medium">Наименование: </span>{requisites.companyName || '—'}</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><span className="font-medium">ИНН: </span>{requisites.inn || '—'}</div>
+                    <div><span className="font-medium">КПП: </span>{requisites.kpp || '—'}</div>
+                  </div>
+                  <div><span className="font-medium">ОГРН: </span>{requisites.ogrn || '—'}</div>
+                  <div><span className="font-medium">Банк: </span>{requisites.bankName || '—'}</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><span className="font-medium">БИК: </span>{requisites.bik || '—'}</div>
+                    <div><span className="font-medium">Р/с: </span>{requisites.settlementAccount || '—'}</div>
+                  </div>
+                  <div><span className="font-medium">К/с: </span>{requisites.correspondentAccount || '—'}</div>
+                  <div><span className="font-medium">Юр. адрес: </span>{requisites.legalAddress || '—'}</div>
                 </div>
               </CardContent>
             </Card>
@@ -223,7 +268,18 @@ export default function Contacts() {
         <CardTitle className="text-2xl font-semibold tracking-wide text-neutral-900 mb-6">ОТПРАВИТЬ СООБЩЕНИЕ</CardTitle>
             </CardHeader>
             <CardContent className="px-0">
-              <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Блок ошибок валидации — под заголовком */}
+              {validationErrors.length > 0 && (
+                <div className="mb-6 p-4 border rounded-none bg-red-50 border-red-200 text-red-800">
+                  <ul className="list-disc pl-5 space-y-1">
+                    {validationErrors.map((err, i) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <form noValidate onSubmit={handleSubmit} className="space-y-6">
               {/* Сообщение о результате отправки */}
               {submitMessage && (
                 <div className={`p-4 border rounded-none ${
@@ -244,7 +300,6 @@ export default function Contacts() {
                     type="text"
                     id="name"
                     name="name"
-                    required
                     value={formData.name}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-neutral-400 bg-white text-neutral-900 focus:outline-none focus:ring-0 focus:border-orange-600 text-sm tracking-wide rounded-none"
@@ -292,7 +347,6 @@ export default function Contacts() {
                     type="email"
                     id="email"
                     name="email"
-                    required
                     value={formData.email}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-neutral-400 bg-white text-neutral-900 focus:outline-none focus:ring-0 focus:border-orange-600 text-sm tracking-wide rounded-none"
@@ -328,7 +382,6 @@ export default function Contacts() {
                 <textarea
                   id="message"
                   name="message"
-                  required
                   rows={6}
                   value={formData.message}
                   onChange={handleChange}
@@ -342,7 +395,6 @@ export default function Contacts() {
                   <input
                     type="checkbox"
                     name="consent"
-                    required
                     checked={formData.consent}
                     onChange={handleChange}
                     className="mt-1 h-4 w-4 text-[var(--primary)] focus:ring-0 border-neutral-400 rounded-none"
@@ -358,7 +410,7 @@ export default function Contacts() {
 
               <Button 
                 type="submit" 
-                disabled={isSubmitting}
+                disabled={isSubmitting || !formData.consent}
                 className="w-full bg-[var(--primary)] hover:bg-[var(--primary)]/90 rounded-none tracking-wide" 
                 size="lg"
               >

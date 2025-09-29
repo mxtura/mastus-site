@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient, ContactSubject, MessageStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 // Разрешаем временно использовать any, чтобы сид работал даже при неактуальном клиенте Prisma
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const prismaAny: any = prisma as any;
 
 async function seedAdmin() {
@@ -79,6 +79,7 @@ async function seedProducts() {
     const products: unknown[] = [
             {
                 name: "Люки дачные",
+                sku: "MAN-DA-001",
                 description:
                     "Дачные люки: легкие, устойчивые к коррозии, подходят для частных участков и садовых зон.",
                 category: { connect: { code: "MANHOLES" } },
@@ -93,6 +94,7 @@ async function seedProducts() {
             },
             {
                 name: "Люки ГТС",
+                sku: "MAN-GTS-002",
                 description:
                     "Люки для городских телекоммуникационных сетей и инженерной инфраструктуры.",
                 category: { connect: { code: "MANHOLES" } },
@@ -110,6 +112,7 @@ async function seedProducts() {
             },
             {
                 name: "Люк лёгкий 30кН",
+                sku: "MAN-L30-003",
                 description:
                     "Легкий люк для зон с минимальными нагрузками: газоны, пешеходные участки.",
                 category: { connect: { code: "MANHOLES" } },
@@ -121,6 +124,7 @@ async function seedProducts() {
             },
             {
                 name: "Люк тяжёлый 150-250кН",
+                sku: "MAN-H250-004",
                 description:
                     "Тяжёлый люк для автомобильных дорог и промышленных площадок с повышенными нагрузками.",
                 category: { connect: { code: "MANHOLES" } },
@@ -139,6 +143,7 @@ async function seedProducts() {
             },
             {
                 name: "Люк средний 70кН",
+                sku: "MAN-M70-005",
                 description:
                     "Средний люк для зон со смешанной нагрузкой: парковки, дворовые территории.",
                 category: { connect: { code: "MANHOLES" } },
@@ -154,6 +159,7 @@ async function seedProducts() {
             },
             {
                 name: "Аллюминиевая трехсекционная универсальная лестница",
+                sku: "LAD-UNI3-006",
                 description:
                     "Трехсекционная универсальная алюминиевая лестница для профессионального и бытового применения.",
                 category: { connect: { code: "LADDERS" } },

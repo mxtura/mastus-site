@@ -112,3 +112,25 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+// Массовое удаление архивных сообщений
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Доступ запрещен' }, { status: 403 })
+    }
+
+    const url = new URL(request.url)
+    const mode = url.searchParams.get('mode')
+    if (mode !== 'purgeArchived') {
+      return NextResponse.json({ error: 'Неверный режим удаления' }, { status: 400 })
+    }
+
+    const result = await prisma.contactMessage.deleteMany({ where: { status: 'ARCHIVED' } })
+    return NextResponse.json({ success: true, deleted: result.count })
+  } catch (error) {
+    console.error('Ошибка массового удаления сообщений:', error)
+    return NextResponse.json({ error: 'Внутренняя ошибка сервера' }, { status: 500 })
+  }
+}
