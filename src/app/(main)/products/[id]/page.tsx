@@ -9,8 +9,9 @@ import type { Product } from "@prisma/client";
 import ProductImage from "@/components/ProductImage";
 
 type ProductWithCategory = Product & { attributes?: unknown, category: { code: string; nameRu: string; params?: { parameter: { code: string; nameRu: string }, visible: boolean }[] } };
+
 interface NormalizedProduct extends Omit<ProductWithCategory, 'images' | 'advantages' | 'applications'> {
-  sku?: string | null;
+  sku: string | null;
   images: string[];
   advantages: string[];
   applications: string[];
