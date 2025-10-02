@@ -30,6 +30,12 @@ export interface FilterConfig {
   placeholder?: string;
   options?: FilterOption[];
   defaultValue?: string | string[] | RangeFilter;
+  inputType?: 'text' | 'number' | 'date';
+  allowSelectAll?: boolean;
+  gridColSpanClassName?: string;
+  section?: 'side' | 'main';
+  hidden?: boolean;
+  inlineWith?: string;
 }
 
 // Пропы компонента
@@ -71,6 +77,7 @@ export function FilterPanel<T extends BaseFilters>({
     let count = 0;
     
     filterConfigs.forEach(config => {
+      if (config.hidden) return;
       const value = filters[config.key];
       
       switch (config.type) {
@@ -81,7 +88,20 @@ export function FilterPanel<T extends BaseFilters>({
           if (typeof value === 'string' && value !== 'ALL' && value !== config.defaultValue) count++;
           break;
         case 'multiselect':
-          if (isStringArray(value) && value.length > 0 && value.length !== config.options?.length) count++;
+          if (isStringArray(value)) {
+            const totalOptions = config.options?.length ?? 0;
+            if (totalOptions > 0) {
+              if (value.length > 0 && value.length !== totalOptions) count++;
+            } else if (Array.isArray(config.defaultValue)) {
+              const defaultValues = config.defaultValue as string[];
+              const arraysMatch =
+                value.length === defaultValues.length &&
+                defaultValues.every(option => value.includes(option));
+              if (!arraysMatch && value.length > 0) count++;
+            } else if (value.length > 0) {
+              count++;
+            }
+          }
           break;
         case 'checkbox':
           if (typeof value === 'string' && value !== 'ALL' && value !== config.defaultValue) count++;
@@ -109,10 +129,19 @@ export function FilterPanel<T extends BaseFilters>({
           resetFilters[config.key as keyof T] = (config.defaultValue || 'ALL') as T[keyof T];
           break;
         case 'multiselect':
-          resetFilters[config.key as keyof T] = (config.options?.map(o => o.value) || []) as T[keyof T];
+          if (Array.isArray(config.defaultValue)) {
+            resetFilters[config.key as keyof T] = [...config.defaultValue] as T[keyof T];
+          } else {
+            resetFilters[config.key as keyof T] = (config.options?.map(o => o.value) || []) as T[keyof T];
+          }
           break;
         case 'range':
-          resetFilters[config.key as keyof T] = { min: '', max: '' } as T[keyof T];
+          if (config.defaultValue && typeof config.defaultValue === 'object') {
+            const defaultRange = config.defaultValue as RangeFilter;
+            resetFilters[config.key as keyof T] = { ...defaultRange } as T[keyof T];
+          } else {
+            resetFilters[config.key as keyof T] = { min: '', max: '' } as T[keyof T];
+          }
           break;
       }
     });
@@ -129,6 +158,190 @@ export function FilterPanel<T extends BaseFilters>({
   };
 
   const activeFiltersCount = getActiveFiltersCount();
+
+  const renderRangeField = (config: FilterConfig, inline = false) => {
+    if (config.hidden) {
+      return null;
+    }
+
+    const value = filters[config.key];
+    const rangeValue = isRangeFilter(value) ? value : { min: '', max: '' };
+    const rangeInputType = config.inputType || 'number';
+    const minPlaceholder = rangeInputType === 'date' ? 'С' : 'От';
+    const maxPlaceholder = rangeInputType === 'date' ? 'По' : 'До';
+    const rangeWidthClass = rangeInputType === 'date'
+      ? 'w-full lg:w-[130px]'
+      : inline
+        ? 'w-full lg:w-[90px]'
+        : 'w-full lg:w-[100px]';
+    const rangeInputClass = `${rangeWidthClass} border-neutral-400 bg-white text-neutral-900 focus:border-[var(--primary)] focus:ring-0 rounded-none text-sm tracking-wide`;
+    const wrapperClassName = inline
+  ? 'space-y-2 lg:flex-none lg:w-[220px]'
+      : `space-y-2 ${config.gridColSpanClassName || ''}`;
+    const containerClassName = inline ? 'flex gap-2 lg:gap-3' : 'flex gap-2';
+
+    return (
+      <div key={config.key} className={wrapperClassName}>
+        <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 mb-2 uppercase">
+          {config.label}
+        </label>
+        <div className={containerClassName}>
+          <Input
+            type={rangeInputType}
+            placeholder={minPlaceholder}
+            value={rangeValue.min}
+            onChange={(e) => updateFilter(config.key, { ...rangeValue, min: e.target.value })}
+            className={rangeInputClass}
+          />
+          <Input
+            type={rangeInputType}
+            placeholder={maxPlaceholder}
+            value={rangeValue.max}
+            onChange={(e) => updateFilter(config.key, { ...rangeValue, max: e.target.value })}
+            className={rangeInputClass}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderFilterField = (config: FilterConfig) => {
+    if (config.hidden || config.inlineWith) {
+      return null;
+    }
+    if (config.type === 'search') {
+      return null;
+    }
+
+    const value = filters[config.key];
+
+    const wrapperClassName = `space-y-2 ${config.gridColSpanClassName || ''}`;
+    const inlineChildren = filterConfigs.filter(child => child.inlineWith === config.key && !child.hidden);
+
+    if (config.type === 'select') {
+      if (inlineChildren.length > 0) {
+        return (
+          <div key={config.key} className={config.gridColSpanClassName || ''}>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:gap-4">
+              <div className="space-y-2 lg:min-w-[180px]">
+                <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 mb-2 uppercase">
+                  {config.label}
+                </label>
+                <Select
+                  value={typeof value === 'string' ? value : (typeof config.defaultValue === 'string' ? config.defaultValue : 'ALL')}
+                  onValueChange={(newValue) => updateFilter(config.key, newValue)}
+                >
+                  <SelectTrigger className="border-neutral-400 bg-white text-neutral-900 focus:border-[var(--primary)] focus:ring-0 rounded-none text-sm tracking-wide">
+                    <SelectValue placeholder={config.label} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {config.options?.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {inlineChildren.map(child =>
+                child.type === 'range' ? renderRangeField(child, true) : null
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div key={config.key} className={wrapperClassName}>
+          <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 mb-2 uppercase">
+            {config.label}
+          </label>
+          <Select
+            value={typeof value === 'string' ? value : (typeof config.defaultValue === 'string' ? config.defaultValue : 'ALL')}
+            onValueChange={(newValue) => updateFilter(config.key, newValue)}
+          >
+            <SelectTrigger className="border-neutral-400 bg-white text-neutral-900 focus:border-[var(--primary)] focus:ring-0 rounded-none text-sm tracking-wide">
+              <SelectValue placeholder={config.label} />
+            </SelectTrigger>
+            <SelectContent>
+              {config.options?.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+
+    if (config.type === 'multiselect') {
+      return (
+        <div key={config.key} className={wrapperClassName}>
+          <div className="flex items-center justify-between mb-2">
+            <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 uppercase">
+              {config.label}
+            </label>
+            {config.allowSelectAll && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-none h-7 px-2 text-xs"
+                onClick={() => {
+                  const currentValues = isStringArray(value) ? value : [];
+                  const all = (config.options?.map(o => o.value) || []);
+                  const isAllSelected = currentValues.length === all.length && all.every(v => currentValues.includes(v));
+                  updateFilter(config.key, isAllSelected ? [] : all);
+                }}
+              >
+                {(() => {
+                  const currentValues = isStringArray(value) ? value : [];
+                  const all = (config.options?.map(o => o.value) || []);
+                  const isAllSelected = currentValues.length === all.length && all.every(v => currentValues.includes(v));
+                  return isAllSelected ? 'Снять все' : 'Выбрать все';
+                })()}
+              </Button>
+            )}
+          </div>
+          <div className="border border-neutral-300 bg-white p-3 rounded-none">
+            <div className="grid grid-cols-1 gap-2">
+              {config.options?.map((option) => {
+                const checked = isStringArray(value) ? value.includes(option.value) : false;
+                return (
+                  <label key={option.value} className="flex items-center gap-2 text-sm text-neutral-800">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(val) => {
+                        const isChecked = Boolean(val);
+                        const currentValues = isStringArray(value) ? value : [];
+                        const newValues = isChecked
+                          ? Array.from(new Set([...currentValues, option.value]))
+                          : currentValues.filter(v => v !== option.value);
+                        updateFilter(config.key, newValues);
+                      }}
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (config.type === 'range') {
+      return renderRangeField(config);
+    }
+
+    return null;
+  };
+
+  const searchConfigs = filterConfigs.filter(config => config.type === 'search' && !config.hidden && !config.inlineWith);
+  const nonSearchConfigs = filterConfigs.filter(config => config.type !== 'search' && !config.hidden && !config.inlineWith);
+  const sideFilters = nonSearchConfigs.filter(config => config.section === 'side');
+  const mainFilters = nonSearchConfigs.filter(config => config.section !== 'side');
 
   return (
     <div className={`border border-neutral-300 bg-neutral-50 rounded-none shadow-sm ${className}`}>
@@ -160,139 +373,35 @@ export function FilterPanel<T extends BaseFilters>({
       {showFilters && (
         <div className="px-6 py-8 space-y-6">
           {/* Search */}
-          {filterConfigs
-            .filter(config => config.type === 'search')
-            .map((config) => (
-              <div key={config.key} className="space-y-2">
-                <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 mb-2 uppercase">
-                  Поиск
-                </label>
-                <Input
-                  placeholder={config.placeholder || 'Введите запрос...'}
-                  value={typeof filters[config.key] === 'string' ? (filters[config.key] as string) : ''}
-                  onChange={(e) => updateFilter(config.key, e.target.value)}
-                  className="w-full border-neutral-400 bg-white text-neutral-900 focus:border-[var(--primary)] focus:ring-0 rounded-none text-sm tracking-wide"
-                />
+          {searchConfigs.map((config) => (
+            <div key={config.key} className="space-y-2">
+              <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 mb-2 uppercase">
+                {config.label}
+              </label>
+              <Input
+                placeholder={config.placeholder || 'Введите запрос...'}
+                value={typeof filters[config.key] === 'string' ? (filters[config.key] as string) : ''}
+                onChange={(e) => updateFilter(config.key, e.target.value)}
+                className="w-full border-neutral-400 bg-white text-neutral-900 focus:border-[var(--primary)] focus:ring-0 rounded-none text-sm tracking-wide"
+              />
+            </div>
+          ))}
+
+          {/* Filters layout */}
+          {sideFilters.length > 0 ? (
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-4 lg:grid-cols-none lg:flex lg:flex-row lg:flex-nowrap lg:items-start lg:gap-6">
+                {mainFilters.map(renderFilterField)}
               </div>
-            ))}
-
-          {/* Grid of other filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {filterConfigs
-              .filter(config => config.type !== 'search')
-              .map((config) => {
-                const value = filters[config.key];
-                if (config.type === 'select') {
-                  return (
-                    <div key={config.key} className="space-y-2">
-                      <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 mb-2 uppercase">
-                        {config.label}
-                      </label>
-                      <Select
-                        value={typeof value === 'string' ? value : (typeof config.defaultValue === 'string' ? config.defaultValue : 'ALL')}
-                        onValueChange={(newValue) => updateFilter(config.key, newValue)}
-                      >
-                        <SelectTrigger className="border-neutral-400 bg-white text-neutral-900 focus:border-[var(--primary)] focus:ring-0 rounded-none text-sm tracking-wide">
-                          <SelectValue placeholder={config.label} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {config.options?.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  );
-                }
-
-                if (config.type === 'multiselect') {
-                  return (
-                    <div key={config.key} className="space-y-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 uppercase">
-                          {config.label}
-                        </label>
-                        {config.key === 'categories' && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="rounded-none h-7 px-2 text-xs"
-                            onClick={() => {
-                              const currentValues = isStringArray(value) ? value : [];
-                              const all = (config.options?.map(o => o.value) || []);
-                              const isAllSelected = currentValues.length === all.length && all.every(v => currentValues.includes(v));
-                              updateFilter(config.key, isAllSelected ? [] : all);
-                            }}
-                          >
-                            {(() => {
-                              const currentValues = isStringArray(value) ? value : [];
-                              const all = (config.options?.map(o => o.value) || []);
-                              const isAllSelected = currentValues.length === all.length && all.every(v => currentValues.includes(v));
-                              return isAllSelected ? 'Снять все' : 'Выбрать все';
-                            })()}
-                          </Button>
-                        )}
-                      </div>
-                      <div className="border border-neutral-300 bg-white p-3 rounded-none">
-                        <div className="grid grid-cols-1 gap-2">
-                          {config.options?.map((option) => {
-                            const checked = isStringArray(value) ? value.includes(option.value) : false;
-                            return (
-                              <label key={option.value} className="flex items-center gap-2 text-sm text-neutral-800">
-                                <Checkbox
-                                  checked={checked}
-                                  onCheckedChange={(val) => {
-                                    const isChecked = Boolean(val);
-                                    const currentValues = isStringArray(value) ? value : [];
-                                    const newValues = isChecked
-                                      ? Array.from(new Set([...currentValues, option.value]))
-                                      : currentValues.filter(v => v !== option.value);
-                                    updateFilter(config.key, newValues);
-                                  }}
-                                />
-                                <span>{option.label}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (config.type === 'range') {
-                  const rangeValue = isRangeFilter(value) ? value : { min: '', max: '' };
-                  return (
-                    <div key={config.key} className="space-y-2">
-                      <label className="flex items-center text-xs font-semibold tracking-wide text-neutral-700 mb-2 uppercase">
-                        {config.label}
-                      </label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          placeholder="От"
-                          value={rangeValue.min}
-                          onChange={(e) => updateFilter(config.key, { ...rangeValue, min: e.target.value })}
-                          className="w-full border-neutral-400 bg-white text-neutral-900 focus:border-[var(--primary)] focus:ring-0 rounded-none text-sm tracking-wide"
-                        />
-                        <Input
-                          type="number"
-                          placeholder="До"
-                          value={rangeValue.max}
-                          onChange={(e) => updateFilter(config.key, { ...rangeValue, max: e.target.value })}
-                          className="w-full border-neutral-400 bg-white text-neutral-900 focus:border-[var(--primary)] focus:ring-0 rounded-none text-sm tracking-wide"
-                        />
-                      </div>
-                    </div>
-                  );
-                }
-
-                return null;
-              })}
-          </div>
+              <div className="grid gap-y-6 lg:gap-x-2 auto-rows-fr lg:grid-cols-[repeat(2,130px)]">
+                {sideFilters.map(renderFilterField)}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-4 lg:grid-cols-none lg:flex lg:flex-row lg:flex-nowrap lg:items-start lg:gap-6">
+              {mainFilters.map(renderFilterField)}
+            </div>
+          )}
 
           {/* Stats + Reset */}
           {(resultsCount !== undefined && totalCount !== undefined) && (

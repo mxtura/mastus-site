@@ -35,8 +35,22 @@ export async function GET(request: NextRequest) {
         applications: true,
         createdAt: true,
         category: {
-          select: { code: true, nameRu: true }
-        }
+          select: {
+            code: true,
+            nameRu: true,
+            params: {
+              where: { visible: true },
+              select: {
+                parameter: {
+                  select: {
+                    code: true,
+                    nameRu: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -50,6 +64,18 @@ export async function GET(request: NextRequest) {
       applications: Array.isArray(p.applications) ? p.applications : [],
       category: p.category.code,
       categoryNameRu: p.category.nameRu,
+      attributeLabels: Array.isArray(p.category.params)
+        ? Object.fromEntries(
+            p.category.params
+              .filter((param: { parameter?: { code?: string; nameRu?: string } }) =>
+                Boolean(param?.parameter?.code),
+              )
+              .map((param: { parameter: { code: string; nameRu: string } }) => [
+                param.parameter.code,
+                param.parameter.nameRu,
+              ]),
+          )
+        : {},
     }))
 
     return NextResponse.json(payload, {
@@ -106,18 +132,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // SKU (артикул) — опционально, но если задан, должен быть уникален и не длиннее 64 символов
-    const skuRaw: unknown = data.sku
-    const sku = typeof skuRaw === 'string' ? skuRaw.trim() : (skuRaw == null ? null : String(skuRaw).trim())
-    if (sku && sku.length > 64) {
+    // SKU (артикул) обязателен, уникален и ограничен по длине
+    if (typeof data.sku !== 'string') {
+      return NextResponse.json({ error: 'Артикул обязателен' }, { status: 400 })
+    }
+    const sku = data.sku.trim()
+    if (!sku) {
+      return NextResponse.json({ error: 'Артикул обязателен' }, { status: 400 })
+    }
+    if (sku.length > 64) {
       return NextResponse.json({ error: 'Артикул слишком длинный (макс. 64)' }, { status: 400 })
     }
-    if (sku && sku !== '') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existing = await (prisma as any).product.findUnique({ where: { sku } })
-      if (existing) {
-        return NextResponse.json({ error: 'Артикул уже используется' }, { status: 409 })
-      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const existing = await (prisma as any).product.findUnique({ where: { sku } })
+    if (existing) {
+      return NextResponse.json({ error: 'Артикул уже используется' }, { status: 409 })
     }
 
     // Найдём категорию по коду
@@ -131,8 +160,8 @@ export async function POST(request: NextRequest) {
   const product = await (prisma as any).product.create({
       data: {
         name: data.name.trim(),
-        description: data.description?.trim() || null,
-  sku: sku && sku !== '' ? sku : null,
+    description: data.description?.trim() || null,
+    sku,
         price: data.price ? parseFloat(data.price) : null,
   categoryId: category.id,
         images: Array.isArray(data.images) ? data.images.slice(0,20) : [],
@@ -144,7 +173,7 @@ export async function POST(request: NextRequest) {
     })
     
     // Логирование действий админа
-    console.log(`Admin ${session.user.email} created product: ${product.name}`)
+  console.log(`Admin ${session.user.login} created product: ${product.name}`)
     
   return NextResponse.json(product, { status: 201 })
   } catch (error) {

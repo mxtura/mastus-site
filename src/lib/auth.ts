@@ -1,4 +1,5 @@
 import { AuthOptions } from "next-auth"
+import type { User as NextAuthUser } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
@@ -8,37 +9,41 @@ export const authOptions: AuthOptions = {
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        login: { label: "Логин", type: "text" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.login || !credentials?.password) {
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+        const userRecord = await (prisma as unknown as { user: { findUnique: (arg: unknown) => Promise<unknown> } }).user.findUnique({
+          where: { login: credentials.login }
         })
+
+        const user = userRecord as
+          | { id: string; login: string; email?: string | null; password: string; name?: string | null; role: string }
+          | null
 
         if (!user) {
           return null
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
 
         if (!isPasswordValid) {
           return null
         }
 
-        return {
+        const mappedUser: NextAuthUser = {
           id: user.id,
-          email: user.email,
-          name: user.name || undefined,
+          login: user.login,
+          email: user.email ?? undefined,
+          name: user.name ?? undefined,
           role: user.role as string
         }
+
+        return mappedUser
       }
     })
   ],
@@ -49,13 +54,15 @@ export const authOptions: AuthOptions = {
     async jwt({ token, user, trigger, session }) {
       // On initial sign in attach role & email
       if (user) {
-        const u = user as { role?: string; email?: string }
+        const u = user as { role?: string; email?: string; login?: string }
         if (u.role) token.role = u.role
         if (u.email) token.email = u.email
+        if (u.login) token.login = u.login
       }
-      // When client calls session.update({ email }) propagate to token
-      if (trigger === 'update' && session?.email) {
-        token.email = session.email
+      // When client calls session.update({ login }) propagate to token
+      if (trigger === 'update') {
+        if (session?.login) token.login = session.login
+        if (session?.email) token.email = session.email
       }
       return token
     },
@@ -63,6 +70,12 @@ export const authOptions: AuthOptions = {
       if (token) {
         session.user.id = token.sub!
         session.user.role = token.role as string
+        const loginValue = typeof token.login === 'string'
+          ? token.login
+          : typeof token.email === 'string'
+            ? token.email
+            : session.user.login ?? ''
+        session.user.login = loginValue
         if (token.email) session.user.email = token.email as string
       }
       return session

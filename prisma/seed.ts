@@ -9,17 +9,20 @@ const prismaAny: any = prisma as any;
 async function seedAdmin() {
     console.log("Создаем администратора...");
     const hashedPassword = await bcrypt.hash("admin123", 12);
-    const admin = await prisma.user.upsert({
-        where: { email: "admin@mastus.ru" },
-        update: {},
+    const admin = await prismaAny.user.upsert({
+        where: { login: "admin" },
+        update: {
+            email: "admin@mastus.ru"
+        },
         create: {
+            login: "admin",
             email: "admin@mastus.ru",
             password: hashedPassword,
             name: "Администратор МАСТУС",
             role: "ADMIN",
         },
     });
-    console.log("Создан администратор:", admin.email);
+    console.log("Создан администратор (логин):", admin.login);
 }
 
 async function seedProducts() {

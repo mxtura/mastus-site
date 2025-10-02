@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Eye, Mail, Phone, Building, Calendar, Trash2, MessageSquare, ArchiveRestore, Archive } from 'lucide-react'
 import { FilterPanel } from '@/components/ui/FilterPanel'
-import { messageFilterConfigs, MessageFilters, initialMessageFilters } from '@/components/filters/message-filter-config'
+import { messageFilterConfigs, MessageFilters, initialMessageFilters, MESSAGE_STATUS_OPTIONS } from '@/components/filters/message-filter-config'
 import { applyMessageFilters, ContactMessage } from '@/components/filters/filter-utils'
 
 const statusLabels = {
@@ -35,6 +35,14 @@ const subjectLabels = {
   TECHNICAL: 'Техническая консультация',
   OTHER: 'Другое'
 }
+
+const NON_ARCHIVED_STATUS_VALUES = MESSAGE_STATUS_OPTIONS
+  .filter(option => option.value !== 'ARCHIVED')
+  .map(option => option.value)
+
+const ARCHIVED_STATUS_VALUES = MESSAGE_STATUS_OPTIONS
+  .filter(option => option.value === 'ARCHIVED')
+  .map(option => option.value)
 
 export default function MessagesPage() {
   const { data: session, status } = useSession()
@@ -82,10 +90,40 @@ export default function MessagesPage() {
   // Функция фильтрации сообщений
   const applyFilters = useCallback((messagesToFilter: ContactMessage[]) => {
     const filteredBase = applyMessageFilters(messagesToFilter, filters);
-    // Разделяем архив/неархив
+    // Разделяем архив/неархив (дополнительная страховка)
     const filtered = filteredBase.filter(m => viewArchived ? m.status === 'ARCHIVED' : m.status !== 'ARCHIVED')
     setFilteredMessages(filtered);
   }, [filters, viewArchived])
+
+  useEffect(() => {
+    setFilters(prev => {
+      const allowedStatuses = viewArchived ? ARCHIVED_STATUS_VALUES : NON_ARCHIVED_STATUS_VALUES;
+      const currentStatuses = Array.isArray(prev.status) ? prev.status.filter(status => allowedStatuses.includes(status)) : [];
+      const nextStatuses = currentStatuses.length > 0 ? currentStatuses : allowedStatuses;
+      const prevStatuses = Array.isArray(prev.status) ? prev.status : [];
+      const isSame = prevStatuses.length === nextStatuses.length && nextStatuses.every(status => prevStatuses.includes(status));
+      if (isSame) {
+        return prev;
+      }
+      return { ...prev, status: nextStatuses };
+    });
+  }, [viewArchived])
+
+  const dynamicFilterConfigs = useMemo(() => {
+    return messageFilterConfigs.map(config => {
+      if (config.key === 'status') {
+        const options = viewArchived
+          ? MESSAGE_STATUS_OPTIONS.filter(option => option.value === 'ARCHIVED')
+          : MESSAGE_STATUS_OPTIONS.filter(option => option.value !== 'ARCHIVED')
+        return {
+          ...config,
+          options,
+          defaultValue: options.map(option => option.value)
+        }
+      }
+      return config
+    })
+  }, [viewArchived])
 
   // Применяем фильтры при изменении сообщений или фильтров
   useEffect(() => {
@@ -241,7 +279,7 @@ export default function MessagesPage() {
         title="Фильтры сообщений"
         filters={filters}
         onFiltersChange={setFilters}
-        filterConfigs={messageFilterConfigs}
+        filterConfigs={dynamicFilterConfigs}
         resultsCount={filteredMessages.length}
         totalCount={messages.length}
         showFilters={showFilters}

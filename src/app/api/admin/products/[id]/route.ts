@@ -28,24 +28,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const data = await request.json()
 
     // SKU обработка: нормализуем, проверяем длину и уникальность, если меняется
-    let skuToSet: string | null | undefined = undefined
+    let skuToSet: string | undefined = undefined
     if (Object.prototype.hasOwnProperty.call(data, 'sku')) {
       const raw = data.sku
-      const sku = typeof raw === 'string' ? raw.trim() : (raw == null ? null : String(raw).trim())
-      if (sku && sku.length > 64) {
+      if (typeof raw !== 'string') {
+        return NextResponse.json({ error: 'Артикул обязателен' }, { status: 400 })
+      }
+      const sku = raw.trim()
+      if (!sku) {
+        return NextResponse.json({ error: 'Артикул обязателен' }, { status: 400 })
+      }
+      if (sku.length > 64) {
         return NextResponse.json({ error: 'Артикул слишком длинный (макс. 64)' }, { status: 400 })
       }
-      if (sku && sku !== '') {
-        // проверим уникальность для другого товара
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const existing = await (prisma as any).product.findUnique({ where: { sku } })
-        if (existing && existing.id !== id) {
-          return NextResponse.json({ error: 'Артикул уже используется' }, { status: 409 })
-        }
-        skuToSet = sku
-      } else {
-        skuToSet = null
+      // проверим уникальность для другого товара
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existing = await (prisma as any).product.findUnique({ where: { sku } })
+      if (existing && existing.id !== id) {
+        return NextResponse.json({ error: 'Артикул уже используется' }, { status: 409 })
       }
+      skuToSet = sku
     }
 
     // если передана категория — найдём её id по коду
@@ -64,8 +66,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       where: { id },
       data: {
         name: data.name?.trim(),
-        description: data.description?.trim(),
-  sku: skuToSet,
+    description: data.description?.trim(),
+    ...(skuToSet !== undefined ? { sku: skuToSet } : {}),
         price: data.price !== undefined && data.price !== null && data.price !== '' ? parseFloat(data.price) : null,
         ...(categoryIdToSet ? { categoryId: categoryIdToSet } : {}),
         isActive: data.isActive,

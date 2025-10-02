@@ -41,7 +41,23 @@ export async function GET() {
   attributes: true,
         advantages: true,
         applications: true,
-        category: { select: { code: true, nameRu: true } },
+        category: {
+          select: {
+            code: true,
+            nameRu: true,
+            params: {
+              where: { visible: true },
+              select: {
+                parameter: {
+                  select: {
+                    code: true,
+                    nameRu: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       }
     })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,6 +68,18 @@ export async function GET() {
       applications: Array.isArray(p.applications) ? p.applications : [],
       category: p.category.code,
       categoryNameRu: p.category.nameRu,
+      attributeLabels: Array.isArray(p.category.params)
+        ? Object.fromEntries(
+            p.category.params
+              .filter((param: { parameter?: { code?: string; nameRu?: string } }) =>
+                Boolean(param?.parameter?.code),
+              )
+              .map((param: { parameter: { code: string; nameRu: string } }) => [
+                param.parameter.code,
+                param.parameter.nameRu,
+              ]),
+          )
+        : {},
     }))
     
     return NextResponse.json(payload)

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,9 +17,9 @@ export default function AdminLogin() {
     setError("");
 
     try {
-      console.log('Attempting login with:', { email, password: '***' });
+      console.log('Attempting login with:', { login, password: '***' });
       const result = await signIn("credentials", {
-        email,
+        login,
         password,
         redirect: false,
       });
@@ -28,7 +28,7 @@ export default function AdminLogin() {
 
       if (result?.error) {
         console.log('Login error:', result.error);
-        setError("Неверный email или пароль");
+        setError("Неверный логин или пароль");
       } else {
         console.log('Login successful, getting session...');
         const session = await getSession();
@@ -76,17 +76,17 @@ export default function AdminLogin() {
             )}
             
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+              <label htmlFor="login" className="block text-sm font-medium text-gray-700 mb-2">
+                Логин
               </label>
               <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                id="login"
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                placeholder="admin@example.com"
+                placeholder="admin"
               />
             </div>
 

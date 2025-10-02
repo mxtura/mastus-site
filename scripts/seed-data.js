@@ -1,3 +1,4 @@
+/* eslint-disable */
 const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
 
@@ -9,9 +10,12 @@ async function seedAdmin() {
   const hashedPassword = await bcrypt.hash('admin123', 12)
   
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@mastus.ru' },
-    update: {},
+    where: { login: 'admin' },
+    update: {
+      email: 'admin@mastus.ru'
+    },
     create: {
+      login: 'admin',
       email: 'admin@mastus.ru',
       password: hashedPassword,
       name: 'Администратор МАСТУС',
@@ -19,7 +23,7 @@ async function seedAdmin() {
     }
   })
 
-  console.log('Создан администратор:', admin.email)
+  console.log('Создан администратор (логин):', admin.login)
 }
 
 async function seedProducts() {

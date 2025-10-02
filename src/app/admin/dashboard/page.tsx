@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Package, MessageSquare, Clock } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Package, MessageSquare, Clock, ArrowRight } from 'lucide-react'
 
 interface Stats {
   totalProducts: number
@@ -69,97 +71,111 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Заголовок */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Дашборд</h1>
-        <p className="text-gray-600">
-          Добро пожаловать, {session.user.email}
-        </p>
-      </div>
+      <Card className="border-neutral-200 bg-white/80 shadow-sm">
+        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-semibold text-neutral-900 header">Дашборд</h1>
+            <CardDescription className="text-sm text-neutral-600 mt-2">
+              Добро пожаловать, {session.user.login}
+            </CardDescription>
+          </div>
+          <Badge variant="tertiary" className="rounded-none px-3 py-1 text-[11px] uppercase tracking-wide">
+            Роль: администратор
+          </Badge>
+        </CardHeader>
+      </Card>
 
       {/* Статистические карточки */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Всего продуктов</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-neutral-200 bg-white/80 shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-neutral-500">Всего продуктов</CardTitle>
+            <div className="flex size-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-500">
+              <Package className="size-4" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProducts}</div>
-            <p className="text-xs text-muted-foreground">
-              Активных продуктов в каталоге
-            </p>
+          <CardContent className="space-y-1">
+            <div className="text-3xl font-semibold text-neutral-900">{stats.totalProducts}</div>
+            <p className="text-xs text-neutral-500">Активные позиции в каталоге</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Всего сообщений</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-neutral-200 bg-white/80 shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-neutral-500">Всего сообщений</CardTitle>
+            <div className="flex size-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-500">
+              <MessageSquare className="size-4" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalMessages}</div>
-            <p className="text-xs text-muted-foreground">
-              Обращений от клиентов
-            </p>
+          <CardContent className="space-y-1">
+            <div className="text-3xl font-semibold text-neutral-900">{stats.totalMessages}</div>
+            <p className="text-xs text-neutral-500">Обращения за всё время</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Новые сообщения</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-neutral-200 bg-white/80 shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-neutral-500">Новые сообщения</CardTitle>
+            <div className="flex size-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-500">
+              <Clock className="size-4" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.newMessages}</div>
-            <p className="text-xs text-muted-foreground">
-              Требуют обработки
-            </p>
+          <CardContent className="space-y-1">
+            <div className="text-3xl font-semibold text-[var(--primary)]">{stats.newMessages}</div>
+            <p className="text-xs text-neutral-500">Ожидают обработки</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Быстрые действия */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="border-neutral-200 bg-white/80 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Управление продукцией</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg text-neutral-900">Управление продукцией</CardTitle>
+            <CardDescription className="text-sm text-neutral-600">
               Добавление, редактирование и управление каталогом продуктов
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link
-              href="/admin/products"
-              className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              <Package className="w-4 h-4 mr-2" />
-              Перейти к продуктам
-            </Link>
+            <Button asChild className="w-full justify-between gap-3 rounded-none border border-neutral-300 bg-neutral-900 text-white hover:bg-neutral-800">
+              <Link href="/admin/products">
+                <span className="inline-flex items-center gap-2">
+                  <Package className="size-4" />
+                  Перейти к продуктам
+                </span>
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-neutral-200 bg-white/80 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Обращения клиентов</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg text-neutral-900">Обращения клиентов</CardTitle>
+            <CardDescription className="text-sm text-neutral-600">
               Просмотр и обработка сообщений от потенциальных клиентов
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Link
-              href="/admin/messages"
-              className="inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Просмотреть сообщения
-              {stats.newMessages > 0 && (
-                <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                  {stats.newMessages}
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full justify-between gap-3 rounded-none border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-100">
+              <Link href="/admin/messages">
+                <span className="inline-flex items-center gap-2">
+                  <MessageSquare className="size-4" />
+                  Просмотреть сообщения
                 </span>
-              )}
-            </Link>
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+            {stats.newMessages > 0 && (
+              <div className="flex items-center justify-between rounded-none border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
+                <span>Непрочитанных сообщений</span>
+                <Badge variant="tertiary" className="rounded-none px-2 py-1 text-[11px]">
+                  {stats.newMessages}
+                </Badge>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

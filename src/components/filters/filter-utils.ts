@@ -1,5 +1,5 @@
 import { ProductFilters } from './product-filter-config';
-import { MessageFilters } from './message-filter-config';
+import { MessageFilters, MESSAGE_STATUS_OPTIONS, MESSAGE_SUBJECT_OPTIONS } from './message-filter-config';
 import { AdminProductFilters } from './admin-product-filter-config';
 
 // Типы для продуктов и сообщений
@@ -7,12 +7,13 @@ export interface Product {
   id: string;
   name: string;
   description: string | null;
-  sku?: string | null;
+  sku: string;
   price: number | null;
   category: string;
   categoryNameRu?: string;
   images: string[];
   attributes?: Record<string, unknown>;
+  attributeLabels?: Record<string, string>;
   advantages: string[];
   applications: string[];
   isActive: boolean;
@@ -35,6 +36,7 @@ export interface ContactMessage {
 // Универсальная функция для применения фильтров к продуктам
 export function applyProductFilters(products: Product[], filters: ProductFilters): Product[] {
   let filtered = [...products];
+  const hasPricedProducts = products.some(product => product.price !== null && product.price > 0);
 
   // Фильтр по тексту
   if (filters.searchText.trim() !== '') {
@@ -51,13 +53,21 @@ export function applyProductFilters(products: Product[], filters: ProductFilters
     filtered = filtered.filter(product => filters.categories.includes(product.category));
   }
 
+  // Фильтр по цене (наличие)
+  if (filters.priceFilter === 'WITH_PRICE') {
+    filtered = filtered.filter(product => product.price !== null && product.price > 0);
+  } else if (filters.priceFilter === 'ON_REQUEST') {
+    filtered = filtered.filter(product => !product.price || product.price <= 0);
+  }
+
   // Фильтр по цене
-  const minPrice = filters.priceRange.min ? parseFloat(filters.priceRange.min) : 0;
-  const maxPrice = filters.priceRange.max ? parseFloat(filters.priceRange.max) : Infinity;
-  if (filters.priceRange.min || filters.priceRange.max) {
+  const shouldApplyPriceRange = filters.priceFilter !== 'ON_REQUEST' && hasPricedProducts;
+  if (shouldApplyPriceRange && (filters.priceRange.min || filters.priceRange.max)) {
+    const minPrice = filters.priceRange.min ? parseFloat(filters.priceRange.min) : 0;
+    const maxPrice = filters.priceRange.max ? parseFloat(filters.priceRange.max) : Infinity;
     filtered = filtered.filter(product => {
-      const productPrice = product.price || 0;
-      return productPrice >= minPrice && productPrice <= maxPrice;
+      if (product.price === null) return false;
+      return product.price >= minPrice && product.price <= maxPrice;
     });
   }
 
@@ -71,7 +81,7 @@ export function applyProductFilters(products: Product[], filters: ProductFilters
       case 'price-desc':
         return (b.price || 0) - (a.price || 0);
       case 'category':
-        return a.category.localeCompare(b.category);
+        return (a.categoryNameRu || a.category).localeCompare(b.categoryNameRu || b.category, 'ru');
       default:
         return 0;
     }
@@ -85,13 +95,15 @@ export function applyMessageFilters(messages: ContactMessage[], filters: Message
   let filtered = [...messages];
 
   // Фильтр по статусу
-  if (filters.status !== 'ALL') {
-    filtered = filtered.filter(msg => msg.status === filters.status);
+  const totalStatusCount = MESSAGE_STATUS_OPTIONS.length;
+  if (Array.isArray(filters.status) && filters.status.length > 0 && filters.status.length !== totalStatusCount) {
+    filtered = filtered.filter(msg => filters.status.includes(msg.status));
   }
 
   // Фильтр по теме
-  if (filters.subject !== 'ALL') {
-    filtered = filtered.filter(msg => msg.subject === filters.subject);
+  const totalSubjectCount = MESSAGE_SUBJECT_OPTIONS.length;
+  if (Array.isArray(filters.subject) && filters.subject.length > 0 && filters.subject.length !== totalSubjectCount) {
+    filtered = filtered.filter(msg => msg.subject && filters.subject.includes(msg.subject));
   }
 
   // Фильтр по наличию компании
@@ -109,23 +121,18 @@ export function applyMessageFilters(messages: ContactMessage[], filters: Message
   }
 
   // Фильтр по дате
-  if (filters.dateRange !== 'ALL') {
-    const now = new Date();
-    const filterDate = new Date();
-    
-    switch (filters.dateRange) {
-      case 'TODAY':
-        filterDate.setHours(0, 0, 0, 0);
-        break;
-      case 'WEEK':
-        filterDate.setDate(now.getDate() - 7);
-        break;
-      case 'MONTH':
-        filterDate.setMonth(now.getMonth() - 1);
-        break;
-    }
-    
-    filtered = filtered.filter(msg => new Date(msg.createdAt) >= filterDate);
+  const hasDateFrom = Boolean(filters.dateRange?.min);
+  const hasDateTo = Boolean(filters.dateRange?.max);
+  if (hasDateFrom || hasDateTo) {
+    const fromDate = hasDateFrom ? new Date(`${filters.dateRange.min}T00:00:00`) : null;
+    const toDate = hasDateTo ? new Date(`${filters.dateRange.max}T23:59:59.999`) : null;
+
+    filtered = filtered.filter(msg => {
+      const createdAt = new Date(msg.createdAt);
+      if (fromDate && createdAt < fromDate) return false;
+      if (toDate && createdAt > toDate) return false;
+      return true;
+    });
   }
 
   // Текстовый поиск
@@ -146,6 +153,7 @@ export function applyMessageFilters(messages: ContactMessage[], filters: Message
 // Функция фильтрации продуктов для админской страницы
 export function applyAdminProductFilters(products: Product[], filters: AdminProductFilters): Product[] {
   let filtered = [...products];
+  const hasPricedProducts = products.some(product => product.price !== null && product.price > 0);
 
   // Фильтр по тексту
   if (filters.searchText.trim() !== '') {
@@ -178,9 +186,10 @@ export function applyAdminProductFilters(products: Product[], filters: AdminProd
   }
 
   // Фильтр по диапазону цен (только для товаров с указанной ценой)
-  const minPrice = filters.priceRange.min ? parseFloat(filters.priceRange.min) : 0;
-  const maxPrice = filters.priceRange.max ? parseFloat(filters.priceRange.max) : Infinity;
-  if (filters.priceRange.min || filters.priceRange.max) {
+  const shouldApplyPriceRange = filters.priceFilter !== 'ON_REQUEST' && hasPricedProducts;
+  if (shouldApplyPriceRange && (filters.priceRange.min || filters.priceRange.max)) {
+    const minPrice = filters.priceRange.min ? parseFloat(filters.priceRange.min) : 0;
+    const maxPrice = filters.priceRange.max ? parseFloat(filters.priceRange.max) : Infinity;
     filtered = filtered.filter(product => {
       if (product.price === null) return false;
       return product.price >= minPrice && product.price <= maxPrice;
@@ -201,7 +210,7 @@ export function applyAdminProductFilters(products: Product[], filters: AdminProd
         const priceDescB = b.price || 0;
         return priceDescB - priceDescA;
       case 'category':
-        return a.category.localeCompare(b.category);
+        return (a.categoryNameRu || a.category).localeCompare(b.categoryNameRu || b.category, 'ru');
       case 'created':
         return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       case 'created-desc':

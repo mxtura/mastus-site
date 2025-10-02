@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface FormData {
   name: string;
@@ -15,6 +15,8 @@ interface FormData {
   consent: boolean;
 }
 
+type WorkingHour = { label: string; time: string };
+
 export default function Contacts() {
   type Requisites = { companyName: string; inn: string; kpp: string; ogrn: string; bankName: string; bik: string; settlementAccount: string; correspondentAccount: string; legalAddress: string }
   const [intro, setIntro] = useState<string>('')
@@ -24,6 +26,7 @@ export default function Contacts() {
   const [contact, setContact] = useState<{ phoneTel: string; emailInfo: string; emailSales: string; addressCityRegion: string; addressStreet: string }>({
     phoneTel: '', emailInfo: '', emailSales: '', addressCityRegion: '', addressStreet: ''
   })
+  const [workingHours, setWorkingHours] = useState<WorkingHour[]>([])
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -37,6 +40,24 @@ export default function Contacts() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const [mapUrls, setMapUrls] = useState<{ shareHref: string; widgetSrc: string; resolvedAddress: string } | null>(null);
+
+  const resolvedMapAddress = useMemo(() => {
+    const contactParts = [contact.addressCityRegion, contact.addressStreet]
+      .map(part => (typeof part === 'string' ? part.trim() : ''))
+      .filter(Boolean)
+
+    return contactParts.join(', ')
+  }, [contact.addressCityRegion, contact.addressStreet])
+
+  const displayWorkingHours = workingHours
+
+  const cityMapHref = useMemo(() => {
+    const city = contact.addressCityRegion?.trim()
+    if (city) return `https://yandex.ru/maps/?mode=search&text=${encodeURIComponent(city)}`
+    return mapUrls?.shareHref ?? 'https://yandex.ru/maps/'
+  }, [contact.addressCityRegion, mapUrls?.shareHref])
 
   useEffect(() => {
     let ignore = false
@@ -69,11 +90,77 @@ export default function Contacts() {
           addressCityRegion: typeof data.addressCityRegion === 'string' ? data.addressCityRegion : '',
           addressStreet: typeof data.addressStreet === 'string' ? data.addressStreet : '',
         })
+        const rawWorkingHours = Array.isArray(data.workingHours) ? data.workingHours : []
+        const normalizedWorkingHours: WorkingHour[] = []
+        for (const entry of rawWorkingHours) {
+          if (!entry || typeof entry !== 'object') continue
+          const record = entry as Record<string, unknown>
+          const label = typeof record.label === 'string' ? record.label.trim() : ''
+          const time = typeof record.time === 'string' ? record.time.trim() : ''
+          if (!label && !time) continue
+          normalizedWorkingHours.push({ label, time })
+        }
+        setWorkingHours(normalizedWorkingHours)
       } catch {}
     }
     load()
     return () => { ignore = true }
   }, [])
+
+  useEffect(() => {
+    const trimmedAddress = resolvedMapAddress.trim()
+
+    if (!trimmedAddress) {
+      setMapUrls(null)
+      return
+    }
+
+    const encodedAddress = encodeURIComponent(trimmedAddress)
+    const fallback = {
+      shareHref: `https://yandex.ru/maps/?mode=search&z=17&text=${encodedAddress}`,
+      widgetSrc: `https://yandex.ru/map-widget/v1/?mode=search&z=17&text=${encodedAddress}`,
+      resolvedAddress: trimmedAddress,
+    }
+    setMapUrls(fallback)
+
+    const controller = new AbortController()
+
+    async function resolvePreciseLink() {
+      try {
+        const params = new URLSearchParams({ query: trimmedAddress })
+        const response = await fetch(`/api/maps/geocode?${params.toString()}`, {
+          signal: controller.signal,
+        })
+        if (!response.ok) return
+
+        const payload = await response.json()
+        if (controller.signal.aborted) return
+
+        const data = payload?.data
+        if (!data || typeof data.shareHref !== 'string' || typeof data.widgetSrc !== 'string') return
+
+        const resolvedAddressFromApi = typeof data.resolvedAddress === 'string' && data.resolvedAddress.trim()
+          ? data.resolvedAddress.trim()
+          : trimmedAddress
+
+        if (!controller.signal.aborted) {
+          setMapUrls({
+            shareHref: data.shareHref,
+            widgetSrc: data.widgetSrc,
+            resolvedAddress: resolvedAddressFromApi,
+          })
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          // swallow network/geocoding errors, fallback links already set
+        }
+      }
+    }
+
+    resolvePreciseLink()
+
+    return () => controller.abort()
+  }, [resolvedMapAddress])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -191,7 +278,6 @@ export default function Contacts() {
                     <div>
                       <h3 className="font-semibold tracking-wide text-neutral-900 mb-1 text-sm">ТЕЛЕФОН</h3>
                       <p className="text-neutral-700"><a href={contact.phoneTel ? `tel:${contact.phoneTel}` : '#'}>{contact.phoneTel ? contact.phoneTel.replace(/^\+?7?\s*(\d{3})(\d{3})(\d{2})(\d{2})$/, "+7 ($1) $2-$3-$4") : '+7'}</a></p>
-                      <p className="text-xs text-neutral-500 mt-1 tracking-wide">ПН-ПТ: 9:00-18:00</p>
                     </div>
                   </div>
 
@@ -228,9 +314,27 @@ export default function Contacts() {
                   </div>
                   <div>
                     <h3 className="font-semibold tracking-wide text-neutral-900 mb-1 text-sm">РЕЖИМ РАБОТЫ</h3>
-                    <p className="text-neutral-700">Понедельник - Пятница: 9:00 - 18:00</p>
-                    <p className="text-neutral-700">Суббота: 10:00 - 16:00</p>
-                    <p className="text-neutral-700">Воскресенье: выходной</p>
+                    <div className="space-y-1">
+                      {displayWorkingHours.length > 0 ? (
+                        displayWorkingHours.map((item, index) => {
+                          const hasLabel = Boolean(item.label)
+                          const hasTime = Boolean(item.time)
+                          return (
+                            <p key={`${item.label}-${item.time}-${index}`} className="text-neutral-700">
+                              {hasLabel ? (
+                                <span className="font-medium">
+                                  {item.label}
+                                  {hasTime ? ': ' : ''}
+                                </span>
+                              ) : null}
+                              {hasTime ? item.time : (!hasLabel ? '—' : '')}
+                            </p>
+                          )
+                        })
+                      ) : (
+                        <p className="text-neutral-500 text-sm">График работы не указан.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -422,24 +526,30 @@ export default function Contacts() {
         </div>
 
         {/* Яндекс карта */}
-        <div className="mt-16">
-          <div className="bg-white border border-neutral-300 overflow-hidden rounded-none">
-            <div style={{position:"relative",overflow:"hidden"}}>
-              <a href="https://yandex.ru/maps/10811/kimry/?utm_medium=mapframe&utm_source=maps" style={{color:"#eee",fontSize:"12px",position:"absolute",top:"0px"}}>Кимры</a>
-              <a href="https://yandex.ru/maps/10811/kimry/house/ulitsa_ordzhonikidze_68/Z04YdQNoQEQEQFtsfXR0eX1jYQ==/?from=api-maps&ll=37.348925%2C56.858086&origin=jsapi_2_1_79&rtext=~56.858155%2C37.348908&rtt=auto&ruri=~&utm_medium=mapframe&utm_source=maps&z=19.96" style={{color:"#eee",fontSize:"12px",position:"absolute",top:"14px"}}>Улица Орджоникидзе, 68 — Яндекс Карты</a>
-              <iframe
-                // Метка с подписью улицы через режим поиска
-                src="https://yandex.ru/map-widget/v1/?ll=37.348925%2C56.858086&z=17&mode=search&text=%D1%83%D0%BB.%20%D0%9E%D1%80%D0%B4%D0%B6%D0%BE%D0%BD%D0%B8%D0%BA%D0%B8%D0%B4%D0%B7%D0%B5%2C%2068%2C%20%D0%9A%D0%B8%D0%BC%D1%80%D1%8B"
-                width="100%"
-                height="400"
-                frameBorder="0"
-                allowFullScreen={true}
-                style={{ position: "relative" }}
-                title="Местоположение Laddex"
-              />
+        {mapUrls ? (
+          <div className="mt-16">
+            <div className="bg-white border border-neutral-300 overflow-hidden rounded-none">
+              <div style={{position:"relative",overflow:"hidden"}}>
+                <a href={cityMapHref} style={{color:"#eee",fontSize:"12px",position:"absolute",top:"0px"}} target="_blank" rel="noreferrer">
+                  {contact.addressCityRegion || mapUrls.resolvedAddress}
+                </a>
+                <a href={mapUrls.shareHref} style={{color:"#eee",fontSize:"12px",position:"absolute",top:"14px"}} target="_blank" rel="noreferrer">
+                  {mapUrls.resolvedAddress || resolvedMapAddress} — Яндекс Карты
+                </a>
+                <iframe
+                  // Метка с подписью улицы через режим поиска
+                  src={mapUrls.widgetSrc}
+                  width="100%"
+                  height="400"
+                  frameBorder="0"
+                  allowFullScreen={true}
+                  style={{ position: "relative" }}
+                  title={`Местоположение: ${mapUrls.resolvedAddress || resolvedMapAddress}`}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </div>
   );

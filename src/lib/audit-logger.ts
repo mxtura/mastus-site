@@ -2,7 +2,7 @@
 
 interface AuditLogEntry {
   userId: string
-  userEmail: string
+  userLogin: string
   action: string
   resource: string
   resourceId?: string
@@ -25,7 +25,7 @@ class AuditLogger {
     this.logs.push(logEntry)
     
     // Консольный вывод для разработки
-    console.log(`[AUDIT] ${logEntry.userEmail} ${logEntry.action} ${logEntry.resource}`, {
+  console.log(`[AUDIT] ${logEntry.userLogin} ${logEntry.action} ${logEntry.resource}`, {
       resourceId: logEntry.resourceId,
       metadata: logEntry.metadata,
       timestamp: logEntry.timestamp.toISOString()

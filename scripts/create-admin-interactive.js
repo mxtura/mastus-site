@@ -1,3 +1,4 @@
+/* eslint-disable */
 const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
 const readline = require('readline')
@@ -55,7 +56,7 @@ async function main() {
   })
 
   if (existingAdmin) {
-    console.log('❌ Администратор уже существует:', existingAdmin.email)
+    console.log('❌ Администратор уже существует:', existingAdmin.login)
     const overwrite = await question('Создать нового администратора? (y/N): ')
     if (overwrite.toLowerCase() !== 'y') {
       console.log('Отменено.')
@@ -64,8 +65,13 @@ async function main() {
   }
 
   // Получаем данные для нового администратора
-  const email = await question('Email администратора: ')
-  if (!email || !email.includes('@')) {
+  const login = await question('Логин администратора: ')
+  if (!login || login.length < 3) {
+    throw new Error('Логин должен содержать минимум 3 символа')
+  }
+
+  const email = await question('Email администратора (необязательно): ')
+  if (email && !email.includes('@')) {
     throw new Error('Некорректный email')
   }
 
@@ -82,7 +88,10 @@ async function main() {
   }
 
   console.log('\n=== Создание администратора ===')
-  console.log('Email:', email)
+  console.log('Логин:', login)
+  if (email) {
+    console.log('Email:', email)
+  }
   console.log('Имя:', name)
   
   const confirm = await question('Создать администратора? (Y/n): ')
@@ -107,7 +116,8 @@ async function main() {
   console.log('Создание администратора...')
   const admin = await prisma.user.create({
     data: {
-      email,
+      login,
+      email: email || null,
       name,
       password: hashedPassword,
       role: 'ADMIN'
@@ -115,7 +125,10 @@ async function main() {
   })
 
   console.log('\n✅ Администратор успешно создан!')
-  console.log('Email:', admin.email)
+  console.log('Логин:', admin.login)
+  if (admin.email) {
+    console.log('Email:', admin.email)
+  }
   console.log('Имя:', admin.name)
   console.log('\nТеперь вы можете войти в админку по адресу: admin.mxbox.fun')
 }

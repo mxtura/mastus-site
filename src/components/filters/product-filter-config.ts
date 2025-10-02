@@ -6,16 +6,18 @@ export const productFilterConfigs: FilterConfig[] = [
     key: 'searchText',
     label: 'Поиск',
     type: 'search',
-  placeholder: 'Поиск по названию, артикулу, описанию...',
+    placeholder: 'Поиск по названию, артикулу, описанию...',
     defaultValue: ''
   },
   {
     key: 'categories',
     label: 'Категории',
     type: 'multiselect',
-  // options are injected dynamically from DB in the page
-  options: [],
-  defaultValue: []
+    // options are injected dynamically from DB in the page
+    options: [],
+    defaultValue: [],
+    allowSelectAll: true,
+    gridColSpanClassName: 'lg:col-span-1 lg:flex-none lg:w-[260px]'
   },
   {
     key: 'sortBy',
@@ -27,19 +29,34 @@ export const productFilterConfigs: FilterConfig[] = [
       { value: 'price-desc', label: 'По цене (убыв.)' },
       { value: 'category', label: 'По категории' }
     ],
-    defaultValue: 'name'
+    defaultValue: 'name',
+    gridColSpanClassName: 'lg:col-span-1 lg:flex-none lg:w-[200px]'
+  },
+  {
+    key: 'priceFilter',
+    label: 'Цена',
+    type: 'select',
+    options: [
+      { value: 'ALL', label: 'Все товары' },
+      { value: 'WITH_PRICE', label: 'С ценой' },
+      { value: 'ON_REQUEST', label: 'По запросу' }
+    ],
+    defaultValue: 'ALL',
+    gridColSpanClassName: 'lg:col-span-1 lg:flex-none lg:w-[220px]'
   },
   {
     key: 'priceRange',
-    label: 'Цена (₽)',
+    label: 'Диапазон цен (₽)',
     type: 'range',
-    defaultValue: { min: '', max: '' }
+    defaultValue: { min: '', max: '' },
+    inlineWith: 'priceFilter'
   }
 ];
 
 // Интерфейс для фильтров продуктов
 export interface ProductFilters extends BaseFilters {
   categories: string[];
+  priceFilter: 'ALL' | 'WITH_PRICE' | 'ON_REQUEST';
   sortBy: string;
   priceRange: RangeFilter;
 }
@@ -48,6 +65,7 @@ export interface ProductFilters extends BaseFilters {
 export const initialProductFilters: ProductFilters = {
   searchText: '',
   categories: ['LADDERS', 'MANHOLES', 'SUPPORT_RINGS'],
+  priceFilter: 'ALL',
   sortBy: 'name',
   priceRange: { min: '', max: '' }
 };

@@ -74,7 +74,7 @@ export default async function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
-            <Card className="group overflow-hidden shadow-sm hover:shadow-md transition-all rounded-none border border-neutral-300 bg-neutral-50">
+            <Card className="group overflow-hidden shadow-sm hover:shadow-md transition-all rounded-none border border-neutral-300 bg-neutral-50 flex flex-col">
               <div className="relative h-48 bg-neutral-100 border-b border-neutral-300 flex items-center justify-center">
                 {ladderImages.length > 0 ? (
                   <FadingSlideshow
@@ -96,18 +96,16 @@ export default async function Home() {
                 <CardTitle className="text-lg font-semibold tracking-wide text-neutral-900 heading">АЛЮМИНИЕВЫЕ ЛЕСТНИЦЫ</CardTitle>
                 <CardDescription className="text-sm tracking-wide text-neutral-600">Профессиональные решения из алюминиевого сплава для производственных задач</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-end gap-2 mb-4">
-                  <span className="text-2xl font-semibold text-neutral-900 leading-none">от 6 200₽</span>
-                  <span className="text-xs text-neutral-500">/ШТ</span>
+              <CardContent className="pt-0 flex-1 flex flex-col">
+                <div className="mt-auto">
+                  <Button asChild className="w-full bg-[var(--primary)] hover:bg-[var(--primary)]/90 rounded-none tracking-wide">
+                    <Link href="/products?categories=LADDERS">Смотреть лестницы</Link>
+                  </Button>
                 </div>
-                <Button asChild className="w-full bg-[var(--primary)] hover:bg-[var(--primary)]/90 rounded-none tracking-wide">
-                  <Link href="/products?categories=LADDERS">Смотреть лестницы</Link>
-                </Button>
               </CardContent>
             </Card>
 
-            <Card className="group overflow-hidden shadow-sm hover:shadow-md transition-all rounded-none border border-neutral-300 bg-neutral-50">
+            <Card className="group overflow-hidden shadow-sm hover:shadow-md transition-all rounded-none border border-neutral-300 bg-neutral-50 flex flex-col">
               <div className="relative h-48 bg-neutral-100 border-b border-neutral-300 flex items-center justify-center">
                 {polymerImages.length > 0 ? (
                   <FadingSlideshow
@@ -128,14 +126,12 @@ export default async function Home() {
                 <CardTitle className="text-lg font-semibold tracking-wide text-neutral-900 heading">ПОЛИМЕР-ПЕСЧАНЫЕ ИЗДЕЛИЯ</CardTitle>
                 <CardDescription className="text-sm tracking-wide text-neutral-600">Люки и опорные кольца для инженерных коммуникаций</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-end gap-2 mb-4">
-                  <span className="text-2xl font-semibold text-neutral-900 leading-none">от 1 800₽</span>
-                  <span className="text-xs text-neutral-500">/ШТ</span>
+              <CardContent className="pt-0 flex-1 flex flex-col">
+                <div className="mt-auto">
+                  <Button asChild className="w-full bg-neutral-900 text-white hover:bg-neutral-800 rounded-none tracking-wide border border-neutral-800">
+                    <Link href="/products?categories=MANHOLES&categories=SUPPORT_RINGS">Смотреть изделия</Link>
+                  </Button>
                 </div>
-                <Button asChild className="w-full bg-neutral-900 text-white hover:bg-neutral-800 rounded-none tracking-wide border border-neutral-800">
-                  <Link href="/products?categories=MANHOLES&categories=SUPPORT_RINGS">Смотреть изделия</Link>
-                </Button>
               </CardContent>
             </Card>
           </div>

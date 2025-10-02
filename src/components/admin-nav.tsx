@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { URLS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
-import { 
-  LayoutDashboard, 
-  Package, 
-  MessageSquare, 
+import {
+  LayoutDashboard,
+  Package,
+  MessageSquare,
+  FileText,
   LogOut,
   User
 } from 'lucide-react'
@@ -16,10 +17,8 @@ import {
 const navigation = [
   { name: 'Дашборд', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Продукты', href: '/products', icon: Package },
-  { name: 'Категории', href: '/categories', icon: Package },
   { name: 'Сообщения', href: '/messages', icon: MessageSquare },
-  { name: 'Контент', href: '/content', icon: LayoutDashboard },
-  { name: 'Настройки', href: '/settings', icon: User },
+  { name: 'Контент', href: '/content', icon: FileText },
 ]
 
 export function AdminNav() {
@@ -83,7 +82,7 @@ export function AdminNav() {
                 <Link href="/settings" className="flex items-center space-x-2 hover:underline">
                   <User className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-700">
-                    {session.user.email}
+                    {session.user.login}
                   </span>
                 </Link>
                 <Button

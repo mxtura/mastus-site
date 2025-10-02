@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 export default function AdminSettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [login, setLogin] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [saving, setSaving] = useState(false)
@@ -25,7 +26,10 @@ export default function AdminSettingsPage() {
       const res = await fetch('/api/admin/settings')
       if (!res.ok) return
       const data = await res.json()
-      if (!ignore) setEmail(data.email || '')
+      if (!ignore) {
+        setLogin(data.login || '')
+        setEmail(data.email || '')
+      }
     }
     load()
     return () => { ignore = true }
@@ -34,8 +38,11 @@ export default function AdminSettingsPage() {
   const save = async () => {
     setSaving(true)
     try {
-      const payload: { email?: string; password?: string } = {}
-      if (email) payload.email = email
+      const payload: { login?: string; email?: string; password?: string } = {}
+      const trimmedLogin = login.trim()
+      if (trimmedLogin) payload.login = trimmedLogin
+      const trimmedEmail = email.trim()
+      payload.email = trimmedEmail
       if (password) payload.password = password
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
@@ -43,8 +50,13 @@ export default function AdminSettingsPage() {
         body: JSON.stringify(payload)
       })
       if (res.ok) {
+        const data = await res.json().catch(() => null)
+        if (data) {
+          setLogin(data.login || trimmedLogin)
+          setEmail(data.email || '')
+        }
         // If email changed propagate to session so top bar updates instantly
-        if (payload.email && payload.email !== session?.user.email) {
+        if ((payload.login && payload.login !== session?.user.login) || (payload.email !== undefined && payload.email !== session?.user.email)) {
           // Force client to refetch session by calling the built-in session endpoint
           try { await fetch('/api/auth/session?update') } catch {}
         }
@@ -69,7 +81,11 @@ export default function AdminSettingsPage() {
         <CardHeader><CardTitle>Учетные данные</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm mb-1">Email администратора</label>
+            <label className="block text-sm mb-1">Логин администратора</label>
+            <Input type="text" value={login} onChange={e=>setLogin(e.target.value)} placeholder="admin" required />
+          </div>
+          <div>
+            <label className="block text-sm mb-1">Email администратора (опционально)</label>
             <Input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@example.com" />
           </div>
           <div>

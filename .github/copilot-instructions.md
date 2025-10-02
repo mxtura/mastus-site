@@ -52,7 +52,7 @@ This is a Next.js 15 (App Router) monorepo with an admin subdomain, MySQL via Pr
   - `npm run dev|build|start`
   - Prisma: `db:migrate`, `db:migrate:deploy`, `db:generate`, `db:seed`, `db:clear`, `db:check`
   - Admin bootstrap: `npm run admin:create` (interactive)
-- Seeding: `prisma/seed.ts` creates an ADMIN and demo data. Credentials for seeded admin: `admin@mastus.ru` with password `admin123` (change in prod!).
+- Seeding: `prisma/seed.ts` creates an ADMIN and demo data. Credentials for seeded admin: login `admin` (email `admin@mastus.ru`) with password `admin123` (change in prod!).
 - Security headers exist in both `next.config.ts` and `middleware.ts` (CSP, X-Frame, etc.). Keep changes in sync.
 
 ## When adding features
