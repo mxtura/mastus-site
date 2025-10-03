@@ -10,6 +10,7 @@ interface ProductImageProps {
   height: number;
   className?: string;
   fallbackSrc?: string;
+  unoptimized?: boolean;
 }
 
 export default function ProductImage({ 
@@ -18,7 +19,8 @@ export default function ProductImage({
   width, 
   height, 
   className = "",
-  fallbackSrc = "/images/placeholder-product.svg"
+  fallbackSrc = "/images/placeholder-product.svg",
+  unoptimized,
 }: ProductImageProps) {
   const [imageSrc, setImageSrc] = useState(src);
   const [hasError, setHasError] = useState(false);
@@ -38,6 +40,11 @@ export default function ProductImage({
       height={height}
       className={className}
       onError={handleError}
+      unoptimized={
+        typeof unoptimized === 'boolean'
+          ? unoptimized
+          : imageSrc.startsWith('/uploads/') || imageSrc.startsWith('blob:')
+      }
     />
   );
 }

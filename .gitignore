@@ -20,6 +20,10 @@
 # production
 /build
 
+/public/uploads
+/public/images
+
+
 # misc
 .DS_Store
 *.pem

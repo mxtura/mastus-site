@@ -21,6 +21,7 @@ import { applyAdminProductFilters } from '@/components/filters/filter-utils'
 import type { MDEditorProps } from '@uiw/react-md-editor'
 import '@uiw/react-md-editor/markdown-editor.css'
 import '@uiw/react-markdown-preview/markdown.css'
+import { SKU_REGEX } from '@/lib/validators'
 
 const MarkdownEditor = dynamic(
   () => import('@uiw/react-md-editor').then((mod) => mod.default),
@@ -361,6 +362,11 @@ function AdminProductsPageInner() {
         setSubmitting(false)
         return
       }
+      if (!SKU_REGEX.test(skuTrimmed)) {
+        setFormError('Артикул (SKU) может содержать только латиницу, цифры и символы _ - . ~')
+        setSubmitting(false)
+        return
+      }
       const requiredParams = (meta?.params || []).filter(p => p.required)
       const attrs = formData.attributes as Record<string, unknown>
       const missing = requiredParams.filter(p => !attrs || !attrs[p.parameter.code] || String(attrs[p.parameter.code]).trim() === '')
@@ -436,7 +442,16 @@ function AdminProductsPageInner() {
                   <div className="grid gap-4 md:grid-cols-3">
                     <div className="grid gap-2">
                       <Label htmlFor="sku">Артикул (SKU) *</Label>
-                      <Input id="sku" value={formData.sku} onChange={e=>setFormData({...formData,sku:e.target.value})} placeholder="Напр.: MST-001" required maxLength={64} />
+                      <Input
+                        id="sku"
+                        value={formData.sku}
+                        onChange={e=>setFormData({...formData,sku:e.target.value})}
+                        placeholder="Напр.: MST-001"
+                        required
+                        maxLength={64}
+                        pattern="[A-Za-z0-9._~-]+"
+                        title="Допустимы латиница, цифры и символы _ - . ~"
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="price">Цена</Label>
@@ -468,7 +483,7 @@ function AdminProductsPageInner() {
                       <div className="flex flex-wrap gap-3">
                         {formData.images.split('\n').filter(Boolean).map(src => (
                           <div key={src} className="relative group h-24 w-24 overflow-hidden rounded border bg-gray-50">
-                            <Image src={src} alt="img" fill className="object-contain p-1" />
+                            <Image src={src} alt="img" fill className="object-contain p-1" unoptimized />
                             <button type="button" onClick={()=>removeImage(src)} className="absolute top-0 right-0 bg-red-600 px-1 text-xs text-white opacity-0 transition group-hover:opacity-100">×</button>
                           </div>
                         ))}
