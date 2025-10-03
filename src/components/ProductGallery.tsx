@@ -332,7 +332,7 @@ export function ProductGallery({ images = [], name, categoryLabel }: ProductGall
                 'object-contain transition-all duration-500 ease-out',
                 mainLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95',
               )}
-              onLoadingComplete={() => setMainLoaded(true)}
+              onLoad={() => setMainLoaded(true)}
               onError={() => setMainError(true)}
               priority
             />
@@ -467,9 +467,10 @@ export function ProductGallery({ images = [], name, categoryLabel }: ProductGall
                     cursor: isDragging ? 'grabbing' : zoom > 1 ? 'grab' : 'default',
                     willChange: 'transform',
                   }}
-                  onLoadingComplete={(event) => {
-                    if (event.naturalWidth > 0 && event.naturalHeight > 0) {
-                      setLightboxSize({ width: event.naturalWidth, height: event.naturalHeight })
+                  onLoad={(event) => {
+                    const target = event.currentTarget
+                    if (target.naturalWidth > 0 && target.naturalHeight > 0) {
+                      setLightboxSize({ width: target.naturalWidth, height: target.naturalHeight })
                     }
                   }}
                   onError={() => {

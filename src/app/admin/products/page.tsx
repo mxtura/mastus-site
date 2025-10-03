@@ -3,12 +3,12 @@
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useCallback, Suspense, useRef, useMemo } from 'react'
+import dynamic from 'next/dynamic'
+import { useEffect, useState, useCallback, Suspense, useRef, useMemo, type ComponentType } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -18,6 +18,14 @@ import Image from 'next/image'
 import ProductImage from '@/components/ProductImage'
 import { adminProductFilterConfigs, AdminProductFilters, initialAdminProductFilters } from '@/components/filters/admin-product-filter-config'
 import { applyAdminProductFilters } from '@/components/filters/filter-utils'
+import type { MDEditorProps } from '@uiw/react-md-editor'
+import '@uiw/react-md-editor/markdown-editor.css'
+import '@uiw/react-markdown-preview/markdown.css'
+
+const MarkdownEditor = dynamic(
+  () => import('@uiw/react-md-editor').then((mod) => mod.default),
+  { ssr: false }
+) as ComponentType<MDEditorProps>
 
 interface Product {
   id: string
@@ -302,6 +310,25 @@ function AdminProductsPageInner() {
   const startEdit = (p: Product) => { setFormError(''); setFormData({ name: p.name, description: p.description || '', sku: p.sku || '', price: p.price?.toString() || '', category: p.category, isActive: p.isActive, images: (p.images||[]).join('\n'), attributes: (p.attributes as Record<string, unknown>) || {}, advantages: (p.advantages||[]).join('\n'), applications: (p.applications||[]).join('\n') }); setEditingId(p.id); setIsDialogOpen(true) }
   const handleDelete = async (id: string) => { if (!confirm('Удалить продукт?')) return; try { const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' }); if (res.ok) fetchProducts() } catch(e){ console.error(e) } }
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    if (isDialogOpen) return
+
+    const body = document.body
+    const html = document.documentElement
+
+    body.style.removeProperty('overflow')
+    body.style.removeProperty('padding-right')
+    body.style.removeProperty('position')
+    body.style.removeProperty('touch-action')
+    body.style.removeProperty('overscroll-behavior')
+    html.style.removeProperty('overflow')
+    html.style.removeProperty('padding-right')
+
+    if (body.hasAttribute('data-scroll-lock')) body.removeAttribute('data-scroll-lock')
+    if (html.hasAttribute('data-scroll-lock')) html.removeAttribute('data-scroll-lock')
+  }, [isDialogOpen])
+
   const handleImageUpload = async (file: File) => {
     const form = new FormData()
     form.append('file', file)
@@ -370,15 +397,15 @@ function AdminProductsPageInner() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Управление продукцией</h1>
           <p className="text-gray-600 mt-2">Добавляйте и редактируйте товары в каталоге</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={startCreate} variant="default">
+              <Button onClick={startCreate} variant="default" className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" /> {editingId ? 'Редактировать' : 'Добавить продукт'}
               </Button>
             </DialogTrigger>
@@ -394,9 +421,17 @@ function AdminProductsPageInner() {
                     <Label htmlFor="name">Название *</Label>
                     <Input id="name" value={formData.name} onChange={e=>setFormData({...formData,name:e.target.value})} required />
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid gap-2" data-color-mode="light">
                     <Label htmlFor="description">Описание</Label>
-                    <Textarea id="description" rows={3} value={formData.description} onChange={e=>setFormData({...formData,description:e.target.value})} />
+                    <div className="border border-neutral-200">
+                      <MarkdownEditor
+                        value={formData.description}
+                        height={240}
+                        preview="edit"
+                        textareaProps={{ id: 'description', placeholder: 'Опишите продукт с использованием Markdown (заголовки, списки, выделения).' }}
+                        onChange={(value: string | undefined) => setFormData(prev => ({ ...prev, description: value ?? '' }))}
+                      />
+                    </div>
                   </div>
                   <div className="grid gap-4 md:grid-cols-3">
                     <div className="grid gap-2">
@@ -446,14 +481,30 @@ function AdminProductsPageInner() {
                       </div>
                       <p className="text-[11px] text-gray-500">До {maxImages} изображений. Поддержка: jpg, png, webp, gif, svg.</p>
                     </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="advantages">Преимущества (строка=пункт)</Label>
-                      <Textarea id="advantages" rows={3} value={formData.advantages} onChange={e=>setFormData({...formData,advantages:e.target.value})} />
+                    <div className="grid gap-2" data-color-mode="light">
+                      <Label htmlFor="advantages">Преимущества (каждая строка станет отдельным пунктом)</Label>
+                      <div className="border border-neutral-200">
+                        <MarkdownEditor
+                          value={formData.advantages}
+                          height={220}
+                          preview="edit"
+                          textareaProps={{ id: 'advantages', placeholder: 'Используйте Markdown: **жирный**, _курсив_, списки и т.д.' }}
+                          onChange={(value: string | undefined) => setFormData(prev => ({ ...prev, advantages: value ?? '' }))}
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="applications">Применение (строка=пункт)</Label>
-                    <Textarea id="applications" rows={3} value={formData.applications} onChange={e=>setFormData({...formData,applications:e.target.value})} />
+                  <div className="grid gap-2" data-color-mode="light">
+                    <Label htmlFor="applications">Применение (каждая строка станет отдельным пунктом)</Label>
+                    <div className="border border-neutral-200">
+                      <MarkdownEditor
+                        value={formData.applications}
+                        height={220}
+                        preview="edit"
+                        textareaProps={{ id: 'applications', placeholder: 'Опишите области использования, можно использовать Markdown.' }}
+                        onChange={(value: string | undefined) => setFormData(prev => ({ ...prev, applications: value ?? '' }))}
+                      />
+                    </div>
                   </div>
                   <div className="grid gap-2">
                     <Label>Параметры категории</Label>
@@ -482,7 +533,7 @@ function AdminProductsPageInner() {
             </form>
           </DialogContent>
         </Dialog>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link href="/categories" className="flex items-center gap-2">
             <Boxes className="w-4 h-4" />
             Управление категориями

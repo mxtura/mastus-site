@@ -1,8 +1,8 @@
 "use client";
-
-import Image from "next/image";
+/* eslint-disable @next/next/no-img-element */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import { MarkdownText } from "@/components/MarkdownText";
 
 export default function About() {
   const [intro, setIntro] = useState<string>('')
@@ -40,9 +40,12 @@ export default function About() {
         {/* Заголовок */}
         <div className="text-center mb-12">
       <h1 className="text-4xl font-bold mb-4 heading tracking-wide">О КОМПАНИИ</h1>
-  <p className="text-lg text-neutral-600 max-w-3xl mx-auto whitespace-pre-line">
-    {intro}
-      </p>
+  <MarkdownText
+    content={intro}
+    baseClassName=""
+    as="div"
+    className="text-lg text-neutral-600 max-w-3xl mx-auto leading-relaxed"
+  />
         </div>
 
         {/* О компании */}
@@ -55,35 +58,33 @@ export default function About() {
                     Laddex
                   </CardTitle>
                 </CardHeader>
-                <div className="space-y-4 text-neutral-700 leading-relaxed whitespace-pre-line">
-                  {companyText}
-                </div>
+                <MarkdownText
+                  content={companyText}
+                  baseClassName="space-y-4"
+                  as="div"
+                  className="text-neutral-700 leading-relaxed"
+                />
               </CardContent>
               <div className="bg-neutral-100 p-8 lg:p-10">
                 {factoryImages.length > 0 ? (
                   <div className="space-y-6">
-                    <div className="relative w-full border border-neutral-300 bg-white overflow-hidden aspect-[4/3]">
-                      <Image
+                    <div className="border border-neutral-300 bg-white overflow-hidden">
+                      <img
                         src={factoryImages[0]}
                         alt="Производственный комплекс Laddex"
-                        fill
-                        className="object-cover"
-                        sizes="(min-width: 1024px) 45vw, 100vw"
-                        priority
-                        unoptimized
+                        className="block h-auto"
+                        loading="lazy"
                       />
                     </div>
                     {factoryImages.length > 1 && (
                       <div className="grid grid-cols-2 gap-4">
                         {factoryImages.slice(1).map((src, index) => (
-                          <div key={`${src}-${index}`} className="relative border border-neutral-300 bg-white overflow-hidden aspect-square">
-                            <Image
+                          <div key={`${src}-${index}`} className="border border-neutral-300 bg-white overflow-hidden">
+                            <img
                               src={src}
                               alt={`Фото производства ${index + 2}`}
-                              fill
-                              className="object-cover"
-                              sizes="(min-width: 1024px) 22vw, 45vw"
-                              unoptimized
+                              className="block h-auto"
+                              loading="lazy"
                             />
                           </div>
                         ))}

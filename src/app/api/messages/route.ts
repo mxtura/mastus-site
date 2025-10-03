@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sendEmail, createAdminNotificationEmail, createAutoReplyEmail } from '@/lib/email'
 import { EMAIL_CONFIG } from '@/lib/constants'
+import { getContent, type ContactsContent } from '@/lib/content'
 
 export async function GET() {
   try {
@@ -33,7 +34,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
-    
+
     // Валидация данных
     if (!data.name || !data.email || !data.message) {
       return NextResponse.json(
@@ -55,11 +56,22 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  // Определяем email администратора из БД
-  const adminUser = await prisma.user.findFirst({ where: { role: 'ADMIN' }, select: { email: true } })
-  const adminEmail = adminUser?.email
-  // Отправка уведомления администратору
-  if (adminEmail && EMAIL_CONFIG.from.address) {
+    const contacts = (await getContent('CONTACTS')) as ContactsContent
+    const contactEmailInfo = contacts.emailInfo?.trim() ?? ''
+    const contactEmailSales = contacts.emailSales?.trim() ?? ''
+    const contactPhone = contacts.phoneTel?.trim() ?? ''
+
+    const adminUser = await prisma.user.findFirst({ where: { role: 'ADMIN' }, select: { email: true } })
+    const adminEmail = adminUser?.email?.trim() ?? ''
+    const fromEmail = EMAIL_CONFIG.from.address?.trim() ?? ''
+
+    const notificationEmail = [contactEmailInfo, contactEmailSales, adminEmail, fromEmail].find(Boolean) ?? ''
+
+    if (!notificationEmail) {
+      console.warn('Не найден адрес для уведомления о сообщении обратной связи')
+    } else if (!fromEmail) {
+      console.warn('Не задан адрес отправителя для уведомления о сообщении обратной связи')
+    } else {
       try {
         const adminNotification = createAdminNotificationEmail({
           name: data.name,
@@ -68,46 +80,50 @@ export async function POST(request: NextRequest) {
           company: data.company,
           subject: data.subject,
           message: data.message
-        });
+        })
 
         await sendEmail({
-          to: adminEmail,
+          to: notificationEmail,
           subject: adminNotification.subject,
           text: adminNotification.text,
           html: adminNotification.html
-        });
+        })
       } catch (emailError) {
-        console.error('Ошибка отправки уведомления администратору:', emailError);
-        // Не прерываем выполнение, если email не отправился
+        console.error('Ошибка отправки уведомления администратору:', emailError)
       }
     }
 
     // Отправка автоответа клиенту
-    if (EMAIL_CONFIG.from.address) {
+    if (fromEmail) {
       try {
-        const autoReply = createAutoReplyEmail(data.name);
-        
+        const autoReplyContactEmail = [contactEmailInfo, contactEmailSales, fromEmail, adminEmail].find(Boolean) ?? ''
+        const autoReply = createAutoReplyEmail(data.name, {
+          phone: contactPhone,
+          email: autoReplyContactEmail
+        })
+
         await sendEmail({
           to: data.email,
           subject: autoReply.subject,
           text: autoReply.text,
           html: autoReply.html
-        });
+        })
       } catch (emailError) {
-        console.error('Ошибка отправки автоответа:', emailError);
-        // Не прерываем выполнение, если email не отправился
+        console.error('Ошибка отправки автоответа:', emailError)
       }
+    } else {
+      console.warn('Не задан адрес отправителя для автоответа клиенту')
     }
-    
-    return NextResponse.json({ 
-      success: true, 
+
+    return NextResponse.json({
+      success: true,
       message: 'Сообщение отправлено успешно',
-      id: message.id 
+      id: message.id
     }, { status: 201 })
   } catch (error) {
     console.error('Ошибка создания сообщения:', error)
     return NextResponse.json(
-      { error: 'Внутренняя ошибка сервера' }, 
+      { error: 'Внутренняя ошибка сервера' },
       { status: 500 }
     )
   }

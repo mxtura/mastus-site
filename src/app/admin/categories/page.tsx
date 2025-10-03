@@ -1,16 +1,25 @@
 "use client"
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { useCallback, useEffect, useState, type ComponentType } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowLeft } from 'lucide-react'
+import type { MDEditorProps } from '@uiw/react-md-editor'
+import '@uiw/react-md-editor/markdown-editor.css'
+import '@uiw/react-markdown-preview/markdown.css'
+
+const MarkdownEditor = dynamic(
+  () => import('@uiw/react-md-editor').then(mod => mod.default),
+  { ssr: false }
+) as ComponentType<MDEditorProps>
 
 type Parameter = { id: string; code: string; nameRu: string }
 type CategoryParam = { id: string; visible: boolean; required: boolean; parameter: Parameter }
-type Category = { id: string; code: string; nameRu: string; params?: CategoryParam[] }
+type Category = { id: string; code: string; nameRu: string; description?: string | null; params?: CategoryParam[] }
 
 interface DraftParam { tempId: string; code: string; nameRu: string; visible: boolean; required: boolean }
 interface CategoryParamDraftState { open: boolean; code: string; nameRu: string; visible: boolean; required: boolean; submitting?: boolean }
@@ -31,6 +40,7 @@ export default function AdminCategoriesPage() {
   const [error, setError] = useState('')
   const [code, setCode] = useState('')
   const [nameRu, setNameRu] = useState('')
+  const [description, setDescription] = useState('')
   const [addingParam, setAddingParam] = useState(false)
   const [draftParams, setDraftParams] = useState<DraftParam[]>(() => BASELINE_PARAMS.map((param, index) => ({ tempId: `baseline-${index}`, ...param })))
   const [newParamCode, setNewParamCode] = useState('')
@@ -38,6 +48,7 @@ export default function AdminCategoriesPage() {
   const [categoryParamDrafts, setCategoryParamDrafts] = useState<Record<string, CategoryParamDraftState>>({})
   const [allParams, setAllParams] = useState<Parameter[]>([])
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
+  const [categoryFormDrafts, setCategoryFormDrafts] = useState<Record<string, { nameRu: string; description: string; saving?: boolean }>>({})
 
   const resetDraftParams = useCallback(() => {
     setDraftParams(BASELINE_PARAMS.map((param, index) => ({ tempId: `baseline-${index}`, ...param })))
@@ -78,23 +89,33 @@ export default function AdminCategoriesPage() {
     void loadParameters()
   }, [loadCategories, loadParameters])
 
-  const updateCategory = useCallback(async (category: Category, patch: Partial<{ nameRu: string }>) => {
+  const updateCategory = useCallback(async (category: Category, patch: Partial<{ nameRu: string; description: string | null }>) => {
     const nextName = patch.nameRu?.trim()
-    if (!nextName || nextName === category.nameRu) return
+    const nextDescription = patch.description === undefined ? undefined : patch.description?.trim() ?? null
+    const payload: Record<string, unknown> = {}
+    if (nextName && nextName !== category.nameRu) {
+      payload.nameRu = nextName
+    }
+    if (nextDescription !== undefined && nextDescription !== (category.description ?? null)) {
+      payload.description = nextDescription
+    }
+    if (Object.keys(payload).length === 0) return false
     try {
       const res = await fetch(`/api/admin/categories/${category.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nameRu: nextName })
+        body: JSON.stringify(payload)
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         setError(body?.error || 'Ошибка обновления категории')
-        return
+        return false
       }
       await loadCategories()
+      return true
     } catch {
       setError('Ошибка обновления категории')
+      return false
     }
   }, [loadCategories])
 
@@ -138,8 +159,9 @@ export default function AdminCategoriesPage() {
   const add = useCallback(async () => {
     const codeUp = code.trim().toUpperCase()
     const name = nameRu.trim()
+    const descriptionValue = description.trim()
     if (!/^[A-Z0-9_\-]{2,40}$/.test(codeUp)) {
-      setError('Некорректный код категории')
+      setError('Некорректный код категории (допускаются только латинские буквы, цифры, дефис и подчёркивание)')
       return
     }
     if (!name) {
@@ -151,7 +173,7 @@ export default function AdminCategoriesPage() {
       const res = await fetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: codeUp, nameRu: name })
+        body: JSON.stringify({ code: codeUp, nameRu: name, description: descriptionValue || null })
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
@@ -173,15 +195,16 @@ export default function AdminCategoriesPage() {
           })
         })
       }
-      setCode('')
-      setNameRu('')
+    setCode('')
+    setNameRu('')
+    setDescription('')
       resetDraftParams()
       await Promise.all([loadCategories(), loadParameters()])
       setEditingCategoryId(created.id)
     } catch {
       setError('Ошибка создания категории')
     }
-  }, [code, nameRu, draftParams, ensureParameter, loadCategories, loadParameters, resetDraftParams])
+  }, [code, nameRu, description, draftParams, ensureParameter, loadCategories, loadParameters, resetDraftParams])
 
   const toggleCategoryParam = useCallback(async (category: Category, parameterId: string, patch: Partial<{ visible: boolean; required: boolean }>) => {
     try {
@@ -322,6 +345,57 @@ export default function AdminCategoriesPage() {
       alert('Ошибка удаления категории')
     }
   }, [loadCategories])
+
+  const saveCategoryBasics = useCallback(async (category: Category) => {
+    const draft = categoryFormDrafts[category.id] ?? {
+      nameRu: category.nameRu,
+      description: category.description ?? '',
+      saving: false
+    }
+    const nameValue = draft.nameRu.trim()
+    const descriptionValue = draft.description.trim()
+    if (!nameValue) {
+      setError('Укажите название категории')
+      return
+    }
+
+    const hasChanges =
+      nameValue !== category.nameRu ||
+      descriptionValue !== (category.description ?? '').trim()
+
+    if (!hasChanges) {
+      return
+    }
+
+    setError('')
+    setCategoryFormDrafts(prev => ({
+      ...prev,
+      [category.id]: {
+        nameRu: nameValue,
+        description: descriptionValue,
+        saving: true
+      }
+    }))
+
+    const success = await updateCategory(category, {
+      nameRu: nameValue,
+      description: descriptionValue || null
+    })
+
+    setCategoryFormDrafts(prev => {
+      const current = prev[category.id]
+      if (!current) return prev
+      return {
+        ...prev,
+        [category.id]: {
+          ...current,
+          nameRu: success ? nameValue : current.nameRu,
+          description: success ? descriptionValue : current.description,
+          saving: false
+        }
+      }
+    })
+  }, [categoryFormDrafts, updateCategory])
   return (
     <div className="container mx-auto max-w-6xl space-y-8 p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -353,6 +427,18 @@ export default function AdminCategoriesPage() {
               <Input placeholder="Код (например, LADDERS)" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} />
               <Input placeholder="Название по-русски" value={nameRu} onChange={e=>setNameRu(e.target.value)} />
               <Button onClick={add} disabled={!code.trim() || !nameRu.trim()}>Создать</Button>
+            </div>
+            <div className="mt-3" data-color-mode="light">
+              <div className="border border-neutral-200">
+                <MarkdownEditor
+                  value={description}
+                  height={180}
+                  preview="edit"
+                  textareaProps={{ placeholder: 'Описание категории (поддерживается Markdown)' }}
+                  onChange={(value: string | undefined) => setDescription(value ?? '')}
+                />
+              </div>
+              <p className="mt-2 text-xs text-neutral-500">Используйте Markdown: заголовки, списки, выделение текста.</p>
             </div>
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
           </div>
@@ -404,7 +490,7 @@ export default function AdminCategoriesPage() {
                     <label className="flex items-center justify-center gap-1 text-xs uppercase tracking-wide text-neutral-600">
                       <Checkbox checked={dp.required} onCheckedChange={()=>updateDraftParam(dp.tempId,{ required: !dp.required, visible: true })} /> Обязательно
                     </label>
-                    <Button size="sm" variant="outline" onClick={()=>removeDraftParam(dp.tempId)}>Удалить</Button>
+                    <Button size="sm" variant="tertiary" onClick={()=>removeDraftParam(dp.tempId)}>Удалить</Button>
                     <div className="text-[10px] font-mono uppercase tracking-wide text-neutral-400">{dp.code}</div>
                   </div>
                 ))}
@@ -428,6 +514,16 @@ export default function AdminCategoriesPage() {
               {items.map(c => {
                 const isEditing = editingCategoryId === c.id
                 const paramCount = c.params?.length ?? 0
+                const draft = categoryFormDrafts[c.id] ?? {
+                  nameRu: c.nameRu,
+                  description: c.description ?? '',
+                  saving: false
+                }
+                const trimmedName = draft.nameRu.trim()
+                const trimmedDescription = draft.description.trim()
+                const hasChanges =
+                  trimmedName !== c.nameRu ||
+                  trimmedDescription !== (c.description ?? '').trim()
                 return (
                   <div key={c.id} className="overflow-hidden rounded border border-neutral-200 bg-white shadow-sm">
                     <div className="flex flex-col gap-4 border-b border-neutral-200 bg-neutral-900 px-5 py-4 text-white sm:flex-row sm:items-center sm:justify-between">
@@ -440,8 +536,21 @@ export default function AdminCategoriesPage() {
                           if (isEditing) {
                             setEditingCategoryId(null)
                             cancelCategoryParamDraft(c)
+                            setCategoryFormDrafts(prev => {
+                              const next = { ...prev }
+                              delete next[c.id]
+                              return next
+                            })
                           } else {
                             setEditingCategoryId(c.id)
+                            setCategoryFormDrafts(prev => ({
+                              ...prev,
+                              [c.id]: {
+                                nameRu: c.nameRu,
+                                description: c.description ?? '',
+                                saving: false
+                              }
+                            }))
                           }
                         }}>
                           {isEditing ? 'Свернуть' : 'Изменить'}
@@ -453,12 +562,15 @@ export default function AdminCategoriesPage() {
                     </div>
                     <div className="space-y-5 px-5 py-5">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-neutral-500">Название</p>
-                          <p className="text-lg font-semibold text-neutral-900">{c.nameRu}</p>
+                        <div className="space-y-1">
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-neutral-500">Название</p>
+                            <p className="text-lg font-semibold text-neutral-900">{c.nameRu}</p>
+                          </div>
+                          
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <span className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-600">
+                          <span className="rounded-full border border-neutral-300 px-4 py-1 text-xs font-medium uppercase tracking-wide text-neutral-600">
                             Параметров: {paramCount}
                           </span>
                         </div>
@@ -481,14 +593,68 @@ export default function AdminCategoriesPage() {
 
                       {isEditing && (
                         <div className="space-y-5 rounded border border-dashed border-neutral-300 bg-neutral-50 p-4">
-                          <div className="grid gap-2 sm:max-w-md">
-                            <label className="text-xs uppercase tracking-wide text-neutral-500">Название категории</label>
-                            <Input defaultValue={c.nameRu} onBlur={async e => {
-                              const value = e.target.value.trim()
-                              if (value && value !== c.nameRu) {
-                                await updateCategory(c, { nameRu: value })
-                              }
-                            }} />
+                          <div className="grid gap-4 sm:max-w-2xl">
+                              <div className="flex flex-wrap items-center gap-3">
+                                <Button
+                                  size="sm"
+                                  onClick={() => saveCategoryBasics(c)}
+                                  disabled={!hasChanges || !trimmedName || draft.saving}
+                                >
+                                  {draft.saving ? 'Сохранение…' : 'Сохранить изменения'}
+                                </Button>
+                              </div>
+                            <div className="grid gap-2">
+                              <label className="text-xs uppercase tracking-wide text-neutral-500">Название категории</label>
+                              <Input
+                                  value={draft.nameRu}
+                                onChange={e => {
+                                  const value = e.target.value
+                                  setCategoryFormDrafts(prev => {
+                                    const prevDraft = prev[c.id] ?? {
+                                      nameRu: c.nameRu,
+                                      description: c.description ?? '',
+                                      saving: false
+                                    }
+                                    return {
+                                      ...prev,
+                                      [c.id]: {
+                                        ...prevDraft,
+                                        nameRu: value
+                                      }
+                                    }
+                                  })
+                                }}
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <label className="text-xs uppercase tracking-wide text-neutral-500">Описание</label>
+                              <div className="border border-neutral-200" data-color-mode="light">
+                                <MarkdownEditor
+                                  value={draft.description}
+                                  height={200}
+                                  preview="edit"
+                                  textareaProps={{ placeholder: 'Используйте Markdown для форматирования описания.' }}
+                                  onChange={(value: string | undefined) => {
+                                    const nextValue = value ?? ''
+                                    setCategoryFormDrafts(prev => {
+                                      const prevDraft = prev[c.id] ?? {
+                                        nameRu: c.nameRu,
+                                        description: c.description ?? '',
+                                        saving: false
+                                      }
+                                      return {
+                                        ...prev,
+                                        [c.id]: {
+                                          ...prevDraft,
+                                          description: nextValue
+                                        }
+                                      }
+                                    })
+                                  }}
+                                />
+                              </div>
+                              <p className="text-[11px] text-neutral-500">Markdown: **жирный**, _курсив_, списки и ссылки.</p>
+                            </div>
                           </div>
 
                           <div className="space-y-2">

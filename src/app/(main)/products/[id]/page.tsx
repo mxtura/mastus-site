@@ -1,12 +1,19 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail } from "lucide-react";
+import { ArrowLeft, Mail, Phone } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import type { Product } from "@prisma/client";
 import ProductGallery from "@/components/ProductGallery";
+import { MarkdownText } from "@/components/MarkdownText";
+import { buildMetadata, normalizeText } from "@/lib/seo";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 type ProductWithCategory = Product & {
     attributes?: unknown;
@@ -29,6 +36,12 @@ interface NormalizedProduct
     images: string[];
     advantages: string[];
     applications: string[];
+}
+
+interface PageProps {
+    params: Promise<{
+        id: string;
+    }>;
 }
 
 async function getProductBySku(rawSku: string) {
@@ -103,10 +116,106 @@ async function getContactPhoneTel(): Promise<string | null> {
     }
 }
 
-interface PageProps {
-    params: Promise<{
-        id: string;
-    }>;
+function ProductConsultationCTA({ phoneTel }: { phoneTel: string | null }) {
+    return (
+        <Card className="rounded-none border border-neutral-800 bg-neutral-900 text-neutral-50 shadow-lg">
+            <CardContent className="space-y-6 p-6">
+                <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.28em] text-neutral-500">
+                        Свяжитесь с нами
+                    </p>
+                    <h3 className="text-2xl font-semibold">
+                        Нужна консультация по продукту?
+                    </h3>
+                    <p className="text-sm leading-relaxed text-neutral-300">
+                        Мы поможем подобрать оптимальную комплектацию, подготовим расчёт и ответим на технические
+                        вопросы. Напишите нам или позвоните — откликнемся в ближайшее время.
+                    </p>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <Button
+                        asChild
+                        className="flex-1 rounded-none border border-transparent bg-[var(--tertiary)] text-white hover:bg-[var(--primary)]"
+                    >
+                        <Link href="/contacts" className="flex items-center justify-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            Отправить запрос
+                        </Link>
+                    </Button>
+                    <Button
+                        asChild
+                        variant="outline"
+                        className="flex-1 rounded-none border-neutral-500 bg-transparent text-neutral-50 hover:bg-neutral-800 hover:text-white"
+                    >
+                        <Link
+                            href={phoneTel ? `tel:${phoneTel}` : "/contacts"}
+                            className="flex items-center justify-center gap-2"
+                        >
+                            <Phone className="h-4 w-4" />
+                            Позвонить
+                        </Link>
+                    </Button>
+                </div>
+                {phoneTel && (
+                    <p className="text-xs uppercase tracking-wide text-neutral-400">
+                        Телефон: <span className="text-neutral-200">{phoneTel}</span>
+                    </p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const { id: skuParam } = await params;
+    const product = await getProductBySku(skuParam);
+
+    if (product) {
+        const productSku = typeof product.sku === "string" && product.sku.trim().length ? product.sku : skuParam;
+
+        let descriptionSource =
+            (typeof product.description === "string" && product.description) ||
+            (Array.isArray(product.advantages)
+                ? (product.advantages as unknown[])
+                      .filter((item): item is string => typeof item === "string")
+                      .slice(0, 3)
+                      .join(". ")
+                : null) ||
+            null;
+
+        if (!descriptionSource && Array.isArray(product.applications)) {
+            descriptionSource = (product.applications as unknown[])
+                .filter((item): item is string => typeof item === "string")
+                .slice(0, 3)
+                .join(". ");
+        }
+
+        const description = normalizeText(descriptionSource);
+
+        const image = Array.isArray(product.images)
+            ? (product.images as unknown[]).find(
+                  (item): item is string => typeof item === "string" && item.trim().length > 0,
+              ) ?? null
+            : null;
+
+        return buildMetadata({
+            title: product.name,
+            description,
+            path: `/products/${productSku}`,
+            ogImage: image,
+            type: "article",
+        });
+    }
+
+    const legacy = await getProductById(skuParam);
+    const path = legacy?.sku ? `/products/${legacy.sku}` : `/products/${skuParam}`;
+
+    return buildMetadata({
+        title: "Каталог продукции",
+        description: "Каталог продукции Laddex: полимер-песчаные люки, опорные кольца и инженерные решения.",
+        path,
+        type: "article",
+    });
 }
 
 export default async function ProductPage({ params }: PageProps) {
@@ -124,19 +233,13 @@ export default async function ProductPage({ params }: PageProps) {
               ...(productRaw as ProductWithCategory),
               sku: typeof productRaw.sku === "string" ? productRaw.sku : "",
               images: Array.isArray(productRaw.images)
-                  ? (productRaw.images as unknown[]).filter(
-                        (item): item is string => typeof item === "string"
-                    )
+                  ? (productRaw.images as unknown[]).filter((item): item is string => typeof item === "string")
                   : [],
               advantages: Array.isArray(productRaw.advantages)
-                  ? (productRaw.advantages as unknown[]).filter(
-                        (item): item is string => typeof item === "string"
-                    )
+                  ? (productRaw.advantages as unknown[]).filter((item): item is string => typeof item === "string")
                   : [],
               applications: Array.isArray(productRaw.applications)
-                  ? (productRaw.applications as unknown[]).filter(
-                        (item): item is string => typeof item === "string"
-                    )
+                  ? (productRaw.applications as unknown[]).filter((item): item is string => typeof item === "string")
                   : [],
           }
         : null;
@@ -155,53 +258,36 @@ export default async function ProductPage({ params }: PageProps) {
         typeof product.attributes === "object"
             ? Object.entries(
                   product.attributes as Record<string, unknown>
-              ).reduce<Array<{ key: string; label: string; value: string }>>(
-                  (acc, [key, rawValue]) => {
-                      const config = product.category.params!.find(
-                          param => param.parameter.code === key && param.visible
-                      );
-                      if (!config) {
-                          return acc;
-                      }
-
-                      let normalizedValue = "";
-                      if (
-                          typeof rawValue === "string" ||
-                          typeof rawValue === "number"
-                      ) {
-                          normalizedValue = String(rawValue);
-                      } else if (Array.isArray(rawValue)) {
-                          normalizedValue = rawValue
-                              .filter(
-                                  (item): item is string | number =>
-                                      typeof item === "string" ||
-                                      typeof item === "number"
-                              )
-                              .map(item => String(item))
-                              .join(", ");
-                      }
-
-                      if (!normalizedValue) {
-                          return acc;
-                      }
-
-                      acc.push({
-                          key,
-                          label: config.parameter.nameRu || key,
-                          value: normalizedValue,
-                      });
+              ).reduce<Array<{ key: string; label: string; value: string }>>((acc, [key, rawValue]) => {
+                  const config = product.category.params!.find(
+                      param => param.parameter.code === key && param.visible
+                  );
+                  if (!config) {
                       return acc;
-                  },
-                  []
-              )
-            : [];
+                  }
 
-    const updatedAtDate = product.updatedAt
-        ? new Date(product.updatedAt)
-        : null;
-    const lastUpdated = updatedAtDate
-        ? updatedAtDate.toLocaleDateString("ru-RU")
-        : null;
+                  let normalizedValue = "";
+                  if (typeof rawValue === "string" || typeof rawValue === "number") {
+                      normalizedValue = String(rawValue);
+                  } else if (Array.isArray(rawValue)) {
+                      normalizedValue = rawValue
+                          .filter((item): item is string | number => typeof item === "string" || typeof item === "number")
+                          .map(item => String(item))
+                          .join(", ");
+                  }
+
+                  if (!normalizedValue) {
+                      return acc;
+                  }
+
+                  acc.push({
+                      key,
+                      label: config.parameter.nameRu || key,
+                      value: normalizedValue,
+                  });
+                  return acc;
+              }, [])
+            : [];
 
     const hasAdvantages = product.advantages.length > 0;
     const hasApplications = product.applications.length > 0;
@@ -237,65 +323,9 @@ export default async function ProductPage({ params }: PageProps) {
                             name={product.name}
                             categoryLabel={categoryLabel}
                         />
-
-                        <Card className="rounded-none border border-neutral-800 bg-neutral-900 text-neutral-50 shadow-lg">
-                            <CardContent className="space-y-6 p-6">
-                                <div className="space-y-2">
-                                    <p className="text-xs uppercase tracking-[0.28em] text-neutral-500">
-                                        Свяжитесь с нами
-                                    </p>
-                                    <h3 className="text-2xl font-semibold">
-                                        Нужна консультация по продукту?
-                                    </h3>
-                                    <p className="text-sm leading-relaxed text-neutral-300">
-                                        Мы поможем подобрать оптимальную
-                                        комплектацию, подготовим расчёт и
-                                        ответим на технические вопросы. Напишите
-                                        нам или позвоните — откликнемся в
-                                        ближайшее время.
-                                    </p>
-                                </div>
-                                <div className="flex flex-col gap-3 sm:flex-row">
-                                    <Button
-                                        asChild
-                                        className="flex-1 rounded-none border border-transparent bg-[var(--tertiary)] text-white hover:bg-[var(--primary)]"
-                                    >
-                                        <Link
-                                            href="/contacts"
-                                            className="flex items-center justify-center gap-2"
-                                        >
-                                            <Mail className="h-4 w-4" />
-                                            Отправить запрос
-                                        </Link>
-                                    </Button>
-                                    <Button
-                                        asChild
-                                        variant="outline"
-                                        className="flex-1 rounded-none border-neutral-500 bg-transparent text-neutral-50 hover:bg-neutral-800 hover:text-white"
-                                    >
-                                        <Link
-                                            href={
-                                                phoneTel
-                                                    ? `tel:${phoneTel}`
-                                                    : "/contacts"
-                                            }
-                                            className="flex items-center justify-center gap-2"
-                                        >
-                                            <Phone className="h-4 w-4" />
-                                            Позвонить
-                                        </Link>
-                                    </Button>
-                                </div>
-                                {phoneTel && (
-                                    <p className="text-xs uppercase tracking-wide text-neutral-400">
-                                        Телефон:{" "}
-                                        <span className="text-neutral-200">
-                                            {phoneTel}
-                                        </span>
-                                    </p>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <div className="hidden lg:block">
+                            <ProductConsultationCTA phoneTel={phoneTel} />
+                        </div>
                     </div>
 
                     <div className="flex flex-col gap-6">
@@ -307,9 +337,12 @@ export default async function ProductPage({ params }: PageProps) {
                                             {product.name}
                                         </h1>
                                         {product.description && (
-                                            <p className="text-base leading-relaxed text-neutral-700">
-                                                {product.description}
-                                            </p>
+                                            <MarkdownText
+                                                content={product.description}
+                                                as="div"
+                                                baseClassName=""
+                                                className="text-base leading-relaxed text-neutral-700 space-y-3"
+                                            />
                                         )}
                                     </div>
                                 </div>
@@ -327,10 +360,7 @@ export default async function ProductPage({ params }: PageProps) {
                                     )}
                                     {product.price ? (
                                         <span className="text-3xl font-semibold text-[var(--primary)] sm:text-4xl">
-                                            {product.price.toLocaleString(
-                                                "ru-RU"
-                                            )}{" "}
-                                            ₽
+                                            {product.price.toLocaleString("ru-RU")} ₽
                                         </span>
                                     ) : (
                                         <span className="text-sm font-medium uppercase tracking-wide text-neutral-500">
@@ -356,25 +386,21 @@ export default async function ProductPage({ params }: PageProps) {
                                 </div>
                                 {attributeEntries.length > 0 ? (
                                     <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-                                        {attributeEntries.map(
-                                            ({ key, label, value }) => (
-                                                <div key={key} className="space-y-1">
-                                                    <dt className="text-[11px] uppercase tracking-wide text-neutral-500">
-                                                        {label}
-                                                    </dt>
-                                                    <dd className="text-sm font-medium leading-snug text-neutral-900">
-                                                        {value}
-                                                    </dd>
-                                                </div>
-                                            )
-                                        )}
+                                        {attributeEntries.map(({ key, label, value }) => (
+                                            <div key={key} className="space-y-1">
+                                                <dt className="text-[11px] uppercase tracking-wide text-neutral-500">
+                                                    {label}
+                                                </dt>
+                                                <dd className="text-sm font-medium leading-snug text-neutral-900">
+                                                    {value}
+                                                </dd>
+                                            </div>
+                                        ))}
                                     </dl>
                                 ) : (
                                     <p className="text-sm text-neutral-600">
-                                        Для данного продукта пока нет
-                                        опубликованных характеристик. Свяжитесь с
-                                        менеджером, и мы подготовим подробную
-                                        спецификацию.
+                                        Для данного продукта пока нет опубликованных характеристик. Свяжитесь с
+                                        менеджером, и мы подготовим подробную спецификацию.
                                     </p>
                                 )}
                             </CardContent>
@@ -395,17 +421,20 @@ export default async function ProductPage({ params }: PageProps) {
                                         </span>
                                     </div>
                                     <ul className="grid gap-2 sm:grid-cols-2">
-                                        {product.advantages.map(
-                                            (advantage, index) => (
-                                                <li
-                                                    key={`${advantage}-${index}`}
-                                                    className="flex items-start gap-2 rounded border border-neutral-200/70 bg-neutral-50 px-3 py-2 text-sm leading-snug text-neutral-700"
-                                                >
-                                                    <span className="mt-1 h-2 w-2 flex-shrink-0 bg-[var(--primary)]" />
-                                                    <span>{advantage}</span>
-                                                </li>
-                                            )
-                                        )}
+                                        {product.advantages.map((advantage, index) => (
+                                            <li
+                                                key={`${advantage}-${index}`}
+                                                className="flex items-start gap-2 rounded border border-neutral-200/70 bg-neutral-50 px-3 py-2"
+                                            >
+                                                <span className="mt-1 h-2 w-2 flex-shrink-0 bg-[var(--primary)]" />
+                                                <MarkdownText
+                                                    content={advantage}
+                                                    as="div"
+                                                    baseClassName=""
+                                                    className="text-sm leading-snug text-neutral-700"
+                                                />
+                                            </li>
+                                        ))}
                                     </ul>
                                 </CardContent>
                             </Card>
@@ -426,21 +455,28 @@ export default async function ProductPage({ params }: PageProps) {
                                         </span>
                                     </div>
                                     <ul className="grid gap-2 sm:grid-cols-2">
-                                        {product.applications.map(
-                                            (application, index) => (
-                                                <li
-                                                    key={`${application}-${index}`}
-                                                    className="flex items-start gap-2 rounded border border-neutral-200/70 bg-neutral-50 px-3 py-2 text-sm leading-snug text-neutral-700"
-                                                >
-                                                    <span className="mt-1 h-2 w-2 flex-shrink-0 bg-[var(--tertiary)]" />
-                                                    <span>{application}</span>
-                                                </li>
-                                            )
-                                        )}
+                                        {product.applications.map((application, index) => (
+                                            <li
+                                                key={`${application}-${index}`}
+                                                className="flex items-start gap-2 rounded border border-neutral-200/70 bg-neutral-50 px-3 py-2"
+                                            >
+                                                <span className="mt-1 h-2 w-2 flex-shrink-0 bg-[var(--tertiary)]" />
+                                                <MarkdownText
+                                                    content={application}
+                                                    as="div"
+                                                    baseClassName=""
+                                                    className="text-sm leading-snug text-neutral-700"
+                                                />
+                                            </li>
+                                        ))}
                                     </ul>
                                 </CardContent>
                             </Card>
                         )}
+
+                        <div className="lg:hidden">
+                            <ProductConsultationCTA phoneTel={phoneTel} />
+                        </div>
                     </div>
                 </div>
             </div>

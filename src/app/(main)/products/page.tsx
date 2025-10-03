@@ -19,8 +19,6 @@ import {
 import ProductImage from "@/components/ProductImage";
 import { Mail, Phone } from "lucide-react";
 
-// Название категории берём из API (categoryNameRu), иначе показываем код
-
 function ProductsPageInner() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -37,9 +35,7 @@ function ProductsPageInner() {
     const categoriesUniverseRef = useRef<string[]>([]);
     const initialCategoriesFromQueryRef = useRef(false);
 
-    // Инициализируем фильтры с учётом query
     const [filters, setFilters] = useState<ProductFilters>(() => {
-        // Build initial filters from URL query
         const categoriesParam = searchParams?.getAll("categories");
         const catSingle = searchParams?.get("categories");
         const categoriesFromQuery =
@@ -89,9 +85,7 @@ function ProductsPageInner() {
         };
     });
 
-    // Синхронизируем смену query после монтирования (на случай client nav)
     useEffect(() => {
-        // Sync filters from URL when query changes (e.g., back/forward, external link)
         const catSingle = searchParams?.get("categories");
         const categoriesParam = searchParams?.getAll("categories");
         const categoriesFromQuery =
@@ -125,7 +119,6 @@ function ProductsPageInner() {
         setFilters(prev => {
             const next: ProductFilters = {
                 searchText: text,
-                // If URL has explicit categories -> use them; else preserve current categories
                 categories:
                     categoriesFromQuery && categoriesFromQuery.length
                         ? (categoriesFromQuery as string[])
@@ -134,7 +127,6 @@ function ProductsPageInner() {
                 priceRange,
                 priceFilter,
             };
-            // Avoid unnecessary state updates
             if (
                 prev.searchText === next.searchText &&
                 prev.sortBy === next.sortBy &&
@@ -150,18 +142,15 @@ function ProductsPageInner() {
         });
     }, [searchParams]);
 
-    // Update URL when filters change via UI
     const updateUrlFromFilters = (nextFilters: ProductFilters) => {
         const params = new URLSearchParams(searchParams?.toString() || "");
 
-        // text => searchText
         if (nextFilters.searchText && nextFilters.searchText.trim() !== "") {
             params.set("text", nextFilters.searchText.trim());
         } else {
             params.delete("text");
         }
 
-        // sorting => sortBy
         if (
             nextFilters.sortBy &&
             nextFilters.sortBy !== initialProductFilters.sortBy
@@ -171,7 +160,6 @@ function ProductsPageInner() {
             params.delete("sorting");
         }
 
-        // priceFilter
         if (
             nextFilters.priceFilter &&
             nextFilters.priceFilter !== initialProductFilters.priceFilter
@@ -181,7 +169,6 @@ function ProductsPageInner() {
             params.delete("priceFilter");
         }
 
-        // currency_price => priceRange "min-max"
         const datasetHasPrice = products.some(
             product => product.price !== null && product.price > 0
         );
@@ -196,7 +183,6 @@ function ProductsPageInner() {
             params.delete("currency_price");
         }
 
-        // categories (multi) => only include if not all categories selected
         params.delete("categories");
         const allCategories = Object.keys(categoriesMap);
         const selected = nextFilters.categories || [];
@@ -250,7 +236,6 @@ function ProductsPageInner() {
         };
     }, []);
 
-    // Когда подтянули категории, если выбор пуст — выбираем все
     useEffect(() => {
         const nextUniverse = Object.keys(categoriesMap);
         const previousUniverse = categoriesUniverseRef.current;
@@ -330,7 +315,6 @@ function ProductsPageInner() {
                     setContactPhone(phone);
                 }
             } catch {
-                // Ignore contact info errors for public page experience
             }
         }
 
@@ -381,12 +365,12 @@ function ProductsPageInner() {
             <div className="min-h-screen py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
-                        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                        <h1 className="text-4xl font-bold text-gray-900 mb-4 heading">
                             Продукция
                         </h1>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
                         {[...Array(6)].map((_, i) => (
                             <Card key={i} className="animate-pulse">
                                 <div className="aspect-video bg-gray-200 rounded-t-lg"></div>
@@ -457,7 +441,6 @@ function ProductsPageInner() {
                     </h1>
                 </div>
 
-                {/* Панель фильтров (универсальная) */}
                 <div className="mb-10">
                     <FilterPanel
                         title="Фильтры и поиск"
@@ -471,7 +454,6 @@ function ProductsPageInner() {
                     />
                 </div>
 
-                {/* Сетка продуктов */}
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
                     {filtered.map(product => {
                         const hasPrice =
@@ -564,7 +546,6 @@ function ProductsPageInner() {
                     })}
                 </div>
 
-                {/* Пустое состояние */}
                 {filtered.length === 0 && !loading && products.length > 0 && (
                     <div className="text-center py-12">
                         <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
@@ -614,7 +595,6 @@ function ProductsPageInner() {
                     </div>
                 )}
 
-                {/* Пустое состояние - нет продуктов вообще */}
                 {products.length === 0 && !loading && (
                     <div className="text-center py-12">
                         <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
@@ -642,25 +622,24 @@ function ProductsPageInner() {
                     </div>
                 )}
 
-                {/* CTA */}
-                <div className="mt-16 px-60">
+                <div className="mt-16">
                     <Card className="rounded-none border border-neutral-800 bg-neutral-900 text-neutral-50 shadow-lg">
-                        <CardContent className="space-y-6 p-6">
-                            <div className="space-y-2">
-                                <p className="text-xs uppercase tracking-[0.28em] text-neutral-500">
+                        <CardContent className="space-y-6 p-6 text-center">
+                            <div className="space-y-2 mx-auto max-w-xl">
+                                <p className="text-s uppercase tracking-[0.28em] text-neutral-500">
                                     Свяжитесь с нами
                                 </p>
-                                <h3 className="text-2xl font-semibold">
+                                <h3 className="text-3xl font-semibold">
                                     Не нашли подходящий продукт?
                                 </h3>
-                                <p className="text-sm leading-relaxed text-neutral-300">
-                                    Мы поможем подобрать оптимальную комплектацию, подготовим расчёт и ответим на технические вопросы. Напишите нам или позвоните — откликнемся в ближайшее время.
+                                <p className="text-s leading-relaxed text-neutral-300">
+                                    Оставьте заявку — мы быстро подберём решение, подготовим расчёт и вернёмся с ответом.
                                 </p>
                             </div>
-                            <div className="flex flex-col gap-3 sm:flex-row">
+                            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                                 <Button
                                     asChild
-                                    className="flex-1 rounded-none border border-transparent bg-[var(--tertiary)] text-white hover:bg-[var(--primary)]"
+                                    className="w-full max-w-xs rounded-none border border-transparent bg-[var(--tertiary)] px-5 py-2 text-sm text-white hover:bg-[var(--primary)] sm:flex-1"
                                 >
                                     <Link
                                         href="/contacts"
@@ -673,7 +652,7 @@ function ProductsPageInner() {
                                 <Button
                                     asChild
                                     variant="outline"
-                                    className="flex-1 rounded-none border-neutral-500 bg-transparent text-neutral-50 hover:bg-neutral-800 hover:text-white"
+                                    className="w-full max-w-xs rounded-none border-neutral-500 bg-transparent px-5 py-2 text-sm text-neutral-50 hover:bg-neutral-800 hover:text-white sm:flex-1"
                                 >
                                     <a
                                         href={

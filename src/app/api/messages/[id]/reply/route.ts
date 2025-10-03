@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
+import { getContent, type ContactsContent } from '@/lib/content'
+import { EMAIL_CONFIG } from '@/lib/constants'
 
 export async function POST(
   request: NextRequest,
@@ -40,6 +42,15 @@ export async function POST(
       )
     }
 
+    const contacts = (await getContent('CONTACTS')) as ContactsContent
+    const contactPhone = contacts.phoneTel?.trim() ?? ''
+    const contactEmail = [
+      contacts.emailInfo?.trim(),
+      contacts.emailSales?.trim(),
+      EMAIL_CONFIG.from.address?.trim(),
+      session.user.email ? session.user.email.trim() : ''
+    ].find(Boolean) ?? ''
+
     // Создаем HTML шаблон для ответа
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -67,8 +78,8 @@ export async function POST(
               <strong>Наши контакты:</strong>
             </p>
             <p style="color: #6b7280; margin: 0; line-height: 1.6;">
-              Телефон: +7 (XXX) XXX-XX-XX<br>
-              Email: info@laddex.ru
+              Телефон: ${contactPhone || 'Не указан'}<br>
+              Email: ${contactEmail ? `<a href="mailto:${contactEmail}" style="color: #3b82f6; text-decoration: none;">${contactEmail}</a>` : 'Не указан'}
             </p>
           </div>
           
@@ -99,8 +110,8 @@ ${originalMessage.message}
 Производство лестниц и полимер-песчаных изделий
 
 Контакты:
-Телефон: +7 (XXX) XXX-XX-XX
-Email: info@laddex.ru
+Телефон: ${contactPhone || 'Не указан'}
+Email: ${contactEmail || 'Не указан'}
     `.trim();
 
     // Отправляем ответ

@@ -2,17 +2,25 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, type ComponentType } from 'react'
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Eye, Mail, Phone, Building, Calendar, Trash2, MessageSquare, ArchiveRestore, Archive } from 'lucide-react'
 import { FilterPanel } from '@/components/ui/FilterPanel'
 import { messageFilterConfigs, MessageFilters, initialMessageFilters, MESSAGE_STATUS_OPTIONS } from '@/components/filters/message-filter-config'
 import { applyMessageFilters, ContactMessage } from '@/components/filters/filter-utils'
+import type { MDEditorProps } from '@uiw/react-md-editor'
+import '@uiw/react-md-editor/markdown-editor.css'
+import '@uiw/react-markdown-preview/markdown.css'
+
+const MarkdownEditor = dynamic(
+  () => import('@uiw/react-md-editor').then((mod) => mod.default),
+  { ssr: false }
+) as ComponentType<MDEditorProps>
 
 const statusLabels = {
   NEW: 'Новое',
@@ -72,6 +80,29 @@ export default function MessagesPage() {
 
     fetchMessages()
   }, [session, status, router])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    if (replyDialogOpen || viewDialogOpen) return
+
+    const body = document.body
+    const html = document.documentElement
+
+    body.style.removeProperty('overflow')
+    body.style.removeProperty('padding-right')
+    body.style.removeProperty('position')
+    body.style.removeProperty('touch-action')
+    body.style.removeProperty('overscroll-behavior')
+    html.style.removeProperty('overflow')
+    html.style.removeProperty('padding-right')
+
+    if (body.hasAttribute('data-scroll-lock')) {
+      body.removeAttribute('data-scroll-lock')
+    }
+    if (html.hasAttribute('data-scroll-lock')) {
+      html.removeAttribute('data-scroll-lock')
+    }
+  }, [replyDialogOpen, viewDialogOpen])
 
   const fetchMessages = async () => {
     try {
@@ -494,17 +525,19 @@ export default function MessagesPage() {
               />
             </div>
             
-            <div>
-              <label htmlFor="replyMessage" className="block text-sm font-medium mb-2">
+            <div className="space-y-2" data-color-mode="light">
+              <label htmlFor="replyMessage" className="block text-sm font-medium">
                 Сообщение
               </label>
-              <Textarea
-                id="replyMessage"
-                value={replyMessage}
-                onChange={(e) => setReplyMessage(e.target.value)}
-                placeholder="Введите ваш ответ..."
-                rows={8}
-              />
+              <div className="border border-neutral-200">
+                <MarkdownEditor
+                  value={replyMessage}
+                  height={280}
+                  textareaProps={{ id: 'replyMessage', placeholder: 'Введите ваш ответ...' }}
+                  onChange={(value: string | undefined) => setReplyMessage(value ?? '')}
+                  preview="live"
+                />
+              </div>
             </div>
             
             {selectedMessage && (

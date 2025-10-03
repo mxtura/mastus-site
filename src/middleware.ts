@@ -88,7 +88,10 @@ export async function middleware(request: NextRequest) {
     }
 
     // Для чистых путей на админском поддомене проверяем авторизацию и делаем rewrite
-  if (pathname === '/dashboard' || pathname === '/products' || pathname === '/messages' || pathname === '/content' || pathname === '/settings' || pathname === '/categories') {
+    const adminTopLevelPaths = ['/dashboard', '/products', '/messages', '/content', '/settings', '/categories']
+    const matchesAdminTopLevel = adminTopLevelPaths.includes(pathname)
+    const isAdminProductsDetail = pathname.startsWith('/products/')
+    if (matchesAdminTopLevel || isAdminProductsDetail) {
       try {
         const token = await getToken({ 
           req: request,
@@ -105,9 +108,9 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(new URL('/login?error=AccessDenied', request.url))
         }
 
-  console.log('✅ Admin subdomain - admin access granted for:', pathname, '- rewriting to /admin' + pathname)
+    console.log('✅ Admin subdomain - admin access granted for:', pathname, '- rewriting to /admin' + pathname)
         // Делаем rewrite на настоящий путь
-        const url = request.nextUrl.clone()
+    const url = request.nextUrl.clone()
     url.pathname = '/admin' + pathname
         return NextResponse.rewrite(url)
       } catch (error) {

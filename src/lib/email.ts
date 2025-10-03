@@ -162,9 +162,15 @@ ${message}
 }
 
 // Шаблон для автоответа клиенту
-export function createAutoReplyEmail(clientName: string) {
+export function createAutoReplyEmail(
+  clientName: string,
+  options?: { phone?: string | null; email?: string | null }
+) {
   const subjectLine = 'Ваше сообщение получено - Laddex';
-  
+
+  const contactPhone = options?.phone?.trim() || 'Не указан';
+  const contactEmail = options?.email?.trim() || EMAIL_CONFIG.from.address || 'info@laddex.ru';
+
   const textContent = `
 Здравствуйте, ${clientName}!
 
@@ -178,8 +184,8 @@ export function createAutoReplyEmail(clientName: string) {
 Производство лестниц и полимер-песчаных изделий
 
 Контакты:
-Телефон: +7 (XXX) XXX-XX-XX
-Email: info@laddex.ru
+Телефон: ${contactPhone}
+Email: ${contactEmail}
   `.trim();
 
   const htmlContent = `
@@ -208,8 +214,8 @@ Email: info@laddex.ru
             <strong>Контакты:</strong>
           </p>
           <p style="color: #6b7280; margin: 0; line-height: 1.6;">
-            Телефон: +7 (XXX) XXX-XX-XX<br>
-            Email: info@laddex.ru
+            Телефон: ${contactPhone}<br>
+            Email: <a href="mailto:${contactEmail}" style="color: #3b82f6; text-decoration: none;">${contactEmail}</a>
           </p>
         </div>
         

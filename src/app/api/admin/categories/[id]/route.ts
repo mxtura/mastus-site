@@ -12,10 +12,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const body = await request.json()
     const nameRu = typeof body.nameRu === 'string' ? body.nameRu.trim() : undefined
+    const description =
+      typeof body.description === 'string'
+        ? body.description.trim()
+        : body.description === null
+        ? null
+        : undefined
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updated = await (prisma as any).category.update({
       where: { id },
-      data: { ...(nameRu !== undefined ? { nameRu } : {}) },
+      data: {
+        ...(nameRu !== undefined ? { nameRu } : {}),
+        ...(description !== undefined ? { description } : {}),
+      },
     })
     return NextResponse.json(updated)
   } catch {

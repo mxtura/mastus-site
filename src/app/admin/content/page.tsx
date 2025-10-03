@@ -1,17 +1,20 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ComponentType } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { Home, Phone, Building2, type LucideIcon } from 'lucide-react'
+import type { MDEditorProps } from '@uiw/react-md-editor'
+import '@uiw/react-md-editor/markdown-editor.css'
+import '@uiw/react-markdown-preview/markdown.css'
 
 type ContentType = 'HOME' | 'CONTACTS' | 'ABOUT'
 
@@ -44,6 +47,34 @@ type WorkingHourEntry = { label?: string; time?: string }
 
 const MAX_FACTORY_IMAGES = 8
 const MAX_FACTORY_IMAGE_SIZE = 5 * 1024 * 1024
+
+const MDEditor = dynamic(
+  () => import('@uiw/react-md-editor').then((mod) => mod.default),
+  { ssr: false }
+) as unknown as ComponentType<MDEditorProps>
+
+interface MarkdownFieldProps {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  height?: number
+}
+
+const MarkdownField = ({ label, value, onChange, placeholder, height = 220 }: MarkdownFieldProps) => (
+  <div className="space-y-2" data-color-mode="light">
+    <label className="block text-sm font-medium text-neutral-700">{label}</label>
+    <div className="rounded-none border border-neutral-200">
+      <MDEditor
+        value={value}
+        height={height}
+        preview="edit"
+        textareaProps={{ placeholder }}
+        onChange={val => onChange(val ?? '')}
+      />
+    </div>
+  </div>
+)
 
 const tabsMeta: Record<ContentType, { title: string; description: string; icon: LucideIcon }> = {
   HOME: {
@@ -504,10 +535,12 @@ export default function ContentAdminPage() {
             <Badge variant="outline" className="rounded-full border-neutral-200 text-xs">Публичный блок</Badge>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div>
-              <label className="block text-sm mb-1">Вступительный текст</label>
-              <Textarea rows={3} value={contacts.intro} onChange={e=>setContacts(v=>({...v, intro: e.target.value}))} />
-            </div>
+            <MarkdownField
+              label="Вступительный текст"
+              value={contacts.intro}
+              placeholder="Расскажите, как лучше связаться с отделом продаж..."
+              onChange={(value) => setContacts((prev) => ({ ...prev, intro: value }))}
+            />
             <Separator />
             <div>
               <label className="block text-sm mb-2 font-medium">Реквизиты</label>
@@ -634,15 +667,20 @@ export default function ContentAdminPage() {
             <Badge variant="outline" className="rounded-full border-neutral-200 text-xs">Публичный блок</Badge>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div>
-              <label className="block text-sm mb-1">Вступительный абзац</label>
-              <Textarea rows={3} value={about.intro} onChange={e=>setAbout(v=>({...v, intro: e.target.value}))} />
-            </div>
+            <MarkdownField
+              label="Вступительный абзац"
+              value={about.intro}
+              placeholder="Коротко опишите компанию и её специализацию."
+              onChange={(value) => setAbout((prev) => ({ ...prev, intro: value }))}
+            />
             <Separator />
-            <div>
-              <label className="block text-sm mb-1">Основной текст о компании</label>
-              <Textarea rows={10} value={about.companyText} onChange={e=>setAbout(v=>({...v, companyText: e.target.value}))} />
-            </div>
+            <MarkdownField
+              label="Основной текст о компании"
+              value={about.companyText}
+              placeholder="Добавьте историю бренда, производственные мощности и ключевые компетенции."
+              height={320}
+              onChange={(value) => setAbout((prev) => ({ ...prev, companyText: value }))}
+            />
             <Separator />
             <div>
               <label className="block text-sm mb-2 font-medium">Фотографии производства</label>

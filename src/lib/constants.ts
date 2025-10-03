@@ -2,8 +2,8 @@
 
 // URL-адреса проекта
 export const URLS = {
-    main: process.env.NEXTAUTH_URL || "https://mxbox.fun",
-    admin: process.env.ADMIN_URL || "https://admin.mxbox.fun",
+    main: process.env.NEXTAUTH_URL,
+    admin: process.env.ADMIN_URL,
 } as const;
 
 // Email конфигурация

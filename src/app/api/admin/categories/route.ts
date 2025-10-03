@@ -40,11 +40,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const code = ensureCode(body.code)
     const nameRu = typeof body.nameRu === 'string' ? body.nameRu.trim() : ''
-    const fieldConfig = body.fieldConfig && typeof body.fieldConfig === 'object' ? body.fieldConfig : null
+    const description = typeof body.description === 'string' ? body.description.trim() : null
     if (!code) return NextResponse.json({ error: 'Некорректный код' }, { status: 400 })
     if (!nameRu) return NextResponse.json({ error: 'Укажите русское имя' }, { status: 400 })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const created = await (prisma as any).category.create({ data: { code, nameRu, fieldConfig } })
+    const created = await (prisma as any).category.create({ data: { code, nameRu, description } })
     return NextResponse.json(created, { status: 201 })
   } catch (e) {
     const err = e as { code?: string }

@@ -66,6 +66,7 @@ model Category {
   id        String    @id @default(cuid())
   code      String    @unique // например: MANHOLES, SUPPORT_RINGS, LADDERS
   nameRu    String    // русское название
+  description String?
   products  Product[]
   params    CategoryParam[]
 
