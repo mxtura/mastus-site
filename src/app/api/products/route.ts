@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/simple-rate-limit'
+import { SKU_REGEX } from '@/lib/validators'
 
 // Получение всех продуктов (публичный доступ)
 export async function GET(request: NextRequest) {
@@ -142,6 +143,9 @@ export async function POST(request: NextRequest) {
     }
     if (sku.length > 64) {
       return NextResponse.json({ error: 'Артикул слишком длинный (макс. 64)' }, { status: 400 })
+    }
+    if (!SKU_REGEX.test(sku)) {
+      return NextResponse.json({ error: 'Артикул может содержать только латиницу, цифры и символы _ - . ~' }, { status: 400 })
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const existing = await (prisma as any).product.findUnique({ where: { sku } })

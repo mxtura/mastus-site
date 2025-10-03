@@ -21,7 +21,8 @@ export default function MainSiteLayout({
 
   const TEL_MAIN_HREF = contact.phoneTel ? `tel:${contact.phoneTel}` : undefined;
   const MAILTO_INFO = contact.emailInfo ? `mailto:${contact.emailInfo}` : undefined;
-  const TG_LINK = contact.telegramUsername ? `https://t.me/${contact.telegramUsername}` : undefined;
+  const sanitizedTelegramUsername = contact.telegramUsername?.replace(/^@+/, "") ?? "";
+  const TG_LINK = sanitizedTelegramUsername ? `https://t.me/${sanitizedTelegramUsername}` : undefined;
   const WA_LINK = contact.whatsappNumber ? `https://wa.me/${contact.whatsappNumber}` : undefined;
 
   const phoneDisplay = contact.phoneTel
@@ -171,53 +172,74 @@ export default function MainSiteLayout({
         {children}
       </main>
       
-  <footer className="bg-black text-white">
+      <footer className="bg-black text-white">
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="md:col-span-2">
-              <h3 className="text-2xl font-bold mb-4 text-[var(--primary)] heading">Laddex</h3>
-              <p className="text-gray-300 mb-4 max-w-md">
-                Производство и продажа качественных алюминиевых лестниц и полимер-песчаных изделий для инженерных коммуникаций. 
-                Надежность, долговечность и профессиональный подход.
-              </p>
-              <div className="flex space-x-4">
-                {/* WhatsApp */}
-                <a href={WA_LINK} aria-label="WhatsApp" className="text-gray-400 hover:text-[var(--primary)] transition-colors">
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.155 5.3 5.36 0 12.02 0a11.86 11.86 0 0111.89 11.887c0 6.56-5.35 11.864-11.987 11.864a11.9 11.9 0 01-5.688-1.448L.057 24zM6.6 19.36c1.676.995 3.276 1.591 5.392 1.591 5.448 0 9.92-4.44 9.92-9.907 0-5.462-4.472-9.886-9.934-9.886-5.463 0-9.887 4.424-9.887 9.886 0 2.225.725 3.891 1.938 5.523l-.999 3.648 3.57-.855zm11.387-5.464c-.073-.122-.268-.195-.56-.342-.292-.146-1.732-.853-2.002-.95-.268-.098-.463-.146-.657.146-.195.292-.755.95-.926 1.146-.17.195-.341.22-.633.073-.292-.146-1.233-.455-2.35-1.45-.868-.774-1.456-1.73-1.627-2.022-.17-.293-.018-.45.128-.596.132-.131.292-.341.438-.512.146-.171.195-.293.292-.488.097-.195.048-.366-.024-.512-.073-.146-.657-1.587-.9-2.173-.237-.569-.48-.49-.657-.5l-.561-.01c-.195 0-.512.073-.78.366-.268.292-1.024 1-1.024 2.438 0 1.438 1.048 2.833 1.195 3.028.146.195 2.066 3.159 5.01 4.428.701.302 1.249.482 1.674.617.703.224 1.343.192 1.848.116.564-.084 1.732-.708 1.975-1.392.244-.683.244-1.268.171-1.39z" />
-                  </svg>
-                </a>
-                {/* Telegram */}
-                <a href={TG_LINK} aria-label="Telegram" className="text-gray-400 hover:text-[var(--primary)] transition-colors">
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 0C5.373 0 0 5.373 0 12c0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12zm5.69 8.217c-.228 2.403-1.216 8.24-1.72 10.932-.213 1.146-.632 1.528-1.04 1.564-.884.082-1.557-.586-2.414-1.148-1.342-.88-2.1-1.428-3.404-2.28-1.507-.992-.53-1.536.33-2.428.226-.235 4.15-3.805 4.23-4.13.009-.04.018-.188-.07-.266-.088-.079-.218-.052-.311-.03-.132.03-2.23 1.417-6.294 4.162-.596.41-1.13.61-1.604.6-.528-.012-1.544-.298-2.3-.543-.928-.301-1.664-.46-1.6-.97.033-.264.397-.533 1.09-.808 4.29-1.868 7.155-3.096 8.596-3.684 4.093-1.702 4.944-1.997 5.5-2.006.122-.002.395.028.572.17.15.12.19.283.21.397-.018.093.003.298-.01.468z" />
-                  </svg>
-                </a>
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold text-[var(--primary)] heading">Laddex</h3>
+              <div className="flex flex-wrap gap-3 text-sm uppercase tracking-widest text-gray-400">
+                <span className="rounded border border-white/10 px-3 py-1">Производство</span>
+                <span className="rounded border border-white/10 px-3 py-1">Инженерные решения</span>
+                <span className="rounded border border-white/10 px-3 py-1">Надежность</span>
               </div>
             </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-[var(--primary)]">Контакты</h3>
-              <div className="text-gray-300 space-y-2">
-                <p className="flex items-center">
-                  <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+
+            <div className="flex flex-col gap-4">
+              <h3 className="text-lg font-semibold text-[var(--primary)]">Контакты</h3>
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-300">
+                <a
+                  href={TEL_MAIN_HREF ?? undefined}
+                  className="flex items-center gap-2 rounded border border-white/10 px-3 py-2 transition hover:border-[var(--primary)] hover:text-white"
+                  aria-label="Позвонить"
+                >
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                   </svg>
-                  <a href={TEL_MAIN_HREF} className="hover:text-white transition-colors">{phoneDisplay}</a>
-                </p>
-                <p className="flex items-center">
-                  <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                  {phoneDisplay}
+                </a>
+                <a
+                  href={MAILTO_INFO ?? undefined}
+                  className="flex items-center gap-2 rounded border border-white/10 px-3 py-2 transition hover:border-[var(--primary)] hover:text-white"
+                  aria-label="Написать на email"
+                >
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                   </svg>
-                  <a href={MAILTO_INFO} className="hover:text-white transition-colors">{contact.emailInfo || 'info@site.ru'}</a>
-                </p>
-                <p className="flex items-center">
-                  <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
-                  </svg>
-                  {contact.addressCityRegion || ''}
-                </p>
+                  {contact.emailInfo || "info@site.ru"}
+                </a>
+                {TG_LINK && (
+                  <a
+                    href={TG_LINK}
+                    className="flex items-center gap-2 rounded border border-white/10 px-3 py-2 transition hover:border-[var(--primary)] hover:text-white"
+                    aria-label="Telegram"
+                  >
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 0C5.373 0 0 5.373 0 12c0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12zm5.69 8.217c-.228 2.403-1.216 8.24-1.72 10.932-.213 1.146-.632 1.528-1.04 1.564-.884.082-1.557-.586-2.414-1.148-1.342-.88-2.1-1.428-3.404-2.28-1.507-.992-.53-1.536.33-2.428.226-.235 4.15-3.805 4.23-4.13.009-.04.018-.188-.07-.266-.088-.079-.218-.052-.311-.03-.132.03-2.23 1.417-6.294 4.162-.596.41-1.13.61-1.604.6-.528-.012-1.544-.298-2.3-.543-.928-.301-1.664-.46-1.6-.97.033-.264.397-.533 1.09-.808 4.29-1.868 7.155-3.096 8.596-3.684 4.093-1.702 4.944-1.997 5.5-2.006.122-.002.395.028.572.17.15.12.19.283.21.397-.018.093.003.298-.01.468z" />
+                    </svg>
+                    Telegram
+                  </a>
+                )}
+                {WA_LINK && (
+                  <a
+                    href={WA_LINK}
+                    className="flex items-center gap-2 rounded border border-white/10 px-3 py-2 transition hover:border-[var(--primary)] hover:text-white"
+                    aria-label="WhatsApp"
+                  >
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.155 5.3 5.36 0 12.02 0a11.86 11.86 0 0111.89 11.887c0 6.56-5.35 11.864-11.987 11.864a11.9 11.9 0 01-5.688-1.448L.057 24zM6.6 19.36c1.676.995 3.276 1.591 5.392 1.591 5.448 0 9.92-4.44 9.92-9.907 0-5.462-4.472-9.886-9.934-9.886-5.463 0-9.887 4.424-9.887 9.886 0 2.225.725 3.891 1.938 5.523l-.999 3.648 3.57-.855zm11.387-5.464c-.073-.122-.268-.195-.56-.342-.292-.146-1.732-.853-2.002-.95-.268-.098-.463-.146-.657.146-.195.292-.755.95-.926 1.146-.17.195-.341.22-.633.073-.292-.146-1.233-.455-2.35-1.45-.868-.774-1.456-1.73-1.627-2.022-.17-.293-.018-.45.128-.596.132-.131.292-.341.438-.512.146-.171.195-.293.292-.488.097-.195.048-.366-.024-.512-.073-.146-.657-1.587-.9-2.173-.237-.569-.48-.49-.657-.5l-.561-.01c-.195 0-.512.073-.78.366-.268.292-1.024 1-1.024 2.438 0 1.438 1.048 2.833 1.195 3.028.146.195 2.066 3.159 5.01 4.428.701.302 1.249.482 1.674.617.703.224 1.343.192 1.848.116.564-.084 1.732-.708 1.975-1.392.244-.683.244-1.268.171-1.39z" />
+                    </svg>
+                    WhatsApp
+                  </a>
+                )}
+                {contact.addressCityRegion && (
+                  <span className="flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-gray-400">
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                    </svg>
+                    {contact.addressCityRegion}
+                  </span>
+                )}
               </div>
             </div>
           </div>

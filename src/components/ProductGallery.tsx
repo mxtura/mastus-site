@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import type {
-  WheelEvent as ReactWheelEvent,
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
 } from 'react'
@@ -109,7 +108,7 @@ export function ProductGallery({ images = [], name, categoryLabel }: ProductGall
   )
 
   const handleWheel = useCallback(
-    (event: ReactWheelEvent<HTMLDivElement>) => {
+    (event: WheelEvent) => {
       if (!isLightboxOpen) return
       event.preventDefault()
       const direction = event.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP
@@ -289,6 +288,19 @@ export function ProductGallery({ images = [], name, categoryLabel }: ProductGall
   }, [isLightboxOpen, lightboxIndex, resetView])
 
   useEffect(() => {
+    if (!isLightboxOpen) return
+
+    const container = lightboxContainerRef.current
+    if (!container) return
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel)
+    }
+  }, [isLightboxOpen, handleWheel])
+
+  useEffect(() => {
     if (!isLightboxOpen || zoom <= 1) return
 
     const handleResize = () => {
@@ -444,7 +456,6 @@ export function ProductGallery({ images = [], name, categoryLabel }: ProductGall
                 role="presentation"
                 aria-label="Область просмотра изображения"
                 className="relative flex max-h-[80vh] w-full items-center justify-center overflow-hidden"
-                onWheel={handleWheel}
                 onDoubleClick={handleDoubleClick}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
